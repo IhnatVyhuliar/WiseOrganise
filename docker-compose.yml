@@ -1,0 +1,37 @@
+services:
+  backend:
+    build: ./backend
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL_MAIN: ${GEMINI_MODEL_MAIN:-gemini-3.8-flash}
+      GEMINI_MODEL_LITE: ${GEMINI_MODEL_LITE:-gemini-3.5-flash-lite}
+      USE_MOCK_AI: ${USE_MOCK_AI:-true}
+    expose:
+      - "8000"
+    networks: [wiseorganise]
+    restart: unless-stopped
+  frontend:
+    build: ./frontend
+    expose:
+      - "80"
+    networks: [wiseorganise]
+    restart: unless-stopped
+  caddy:
+    image: caddy:2.9-alpine
+    ports:
+      - "4540:4540"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [backend, frontend]
+    networks: [wiseorganise]
+    restart: unless-stopped
+
+networks:
+  wiseorganise:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:
