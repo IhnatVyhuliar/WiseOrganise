@@ -20,6 +20,36 @@ class VendorCriterion(APIModel):
 
 
 
+class AreaCriterion(APIModel):
+
+    """A supplier criterion written for one lifecycle area.
+
+    Narrower than :class:`VendorCriterion`, which stays the universal list, and
+    it names the evidence to ask for instead of only how to verify.
+    """
+
+    name: str
+
+    jak_sprawdzic: str = Field(validation_alias=AliasChoices("jak_sprawdzic", "jakSprawdzic", "howToVerify"), serialization_alias="howToVerify")
+
+    dowod: str = Field(validation_alias=AliasChoices("dowod", "evidence"), serialization_alias="evidence")
+
+    sygnal_ostrzegawczy: str = Field(validation_alias=AliasChoices("sygnal_ostrzegawczy", "sygnalOstrzegawczy", "warning"), serialization_alias="warning")
+
+
+
+class AreaCriteria(APIModel):
+
+    """The criteria that apply to one lifecycle area."""
+
+    area_id: AreaId
+
+    area_name: str = Field(serialization_alias="areaName")
+
+    criteria: list[AreaCriterion] = Field(default_factory=list)
+
+
+
 class AreaVerification(APIModel):
 
     area_id: AreaId
