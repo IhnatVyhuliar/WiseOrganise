@@ -131,7 +131,10 @@ def generate_structured(
         client = genai.Client(api_key=settings.gemini_api_key)
         response = client.models.generate_content(
             model=selected_model,
-            contents=prompt,
+            # Plain str, never the GroundedPrompt subclass: the SDK serializes a
+            # str subclass into an empty request body (400 "Request has empty
+            # input"). allowed_ids was already read off it above.
+            contents=str(prompt),
             config=types.GenerateContentConfig(
                 system_instruction=f"{_SAFETY_INSTRUCTION}\n{system_instruction}",
                 response_mime_type="application/json",
