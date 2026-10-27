@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Check, ChevronDown, Info, SlidersHorizontal } from 'lucide-react';
 import { api } from '../../lib/api';
-import type { EventArea } from '../../types';
+import type { AreaId, EventArea } from '../../types';
 import type { View } from '../layout/Layout';
 import { Stepper } from '../layout/Layout';
-export function CreatorPage({onNavigate,areas,event,ensureEvent,saveEvent,onGuide}:{onNavigate:(v:View)=>void;areas:EventArea[];event:any;ensureEvent:(payload?:Record<string,unknown>)=>Promise<any>;saveEvent:(payload:Record<string,unknown>)=>Promise<any>;onGuide:()=>Promise<void>}) {
+export function CreatorPage({onNavigate,areas,event,ensureEvent,saveEvent,neededAreas,onNeededAreas,onGuide}:{onNavigate:(v:View)=>void;areas:EventArea[];event:any;ensureEvent:(payload?:Record<string,unknown>)=>Promise<any>;saveEvent:(payload:Record<string,unknown>)=>Promise<any>;neededAreas:AreaId[]|null;onNeededAreas:(areas:AreaId[])=>Promise<void>;onGuide:()=>Promise<void>}) {
+ void neededAreas; void onNeededAreas;
  const [step,setStep]=useState(0); const [areaId,setAreaId]=useState(areas[0]?.id||'dojazd'); const [selections,setSelections]=useState<Record<string,number>>(event?.selectedOptions||{}); const [expanded,setExpanded]=useState<Record<string,boolean>>({'dojazd-1':true}); const [basics,setBasics]=useState({place:event?.location||'Uniwersytet Łódzki, Łódź',date:event?.eventDate||'2026-11-20',participants:event?.attendees||120,origins:event?.participantOrigins||'Łódź i okolice'}); const current=areas.find(a=>a.id===areaId)??areas[0]; const pickedCount=Object.values(selections).filter(Boolean).length; const totalCostSaving=useMemo(()=>Object.entries(selections).filter(([id,l])=>areas.find(a=>a.id===id)?.levels.find(o=>o.level===l)?.cost==='Obniża koszt').length,[selections,areas]);
  const choose=async(id:string,level:number)=>{const next={...selections,[id]:selections[id]===level?0:level}; if(!next[id]) delete next[id]; setSelections(next); const currentEvent=await ensureEvent(); await api.updateOptions(currentEvent.id,Object.entries(next).map(([area_id,l])=>({area_id,level:l,use_ai_suggestions:true}))); await api.updateChecklist(currentEvent.id,{items:[],use_ai_suggestions:true});};
  const saveBasics=async()=>{await saveEvent({location:basics.place,eventDate:basics.date,attendees:basics.participants,participantOrigins:basics.origins}); const currentEvent=await ensureEvent(); await api.analyze(currentEvent.id); await api.checklist(currentEvent.id); setStep(1);};
