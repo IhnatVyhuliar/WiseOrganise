@@ -21,3 +21,23 @@
 .milestone-group+.milestone-group{margin-top:22px}
 .milestone-heading{display:flex;flex-wrap:wrap;gap:9px;align-items:baseline}
 .milestone-heading small{color:#6f7b74;font-size:.82rem}
+
+/* The AI suggestion is an offer, not a gate: the toggles below stay usable. */
+.needs-ai {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+}
+
+.needs-ai-note {
+  display: flex;
+  gap: 10px;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  padding: 13px 15px;
+  border-radius: 13px;
+}
+
+.needs-ai-note p { color: #314038; }
+
+.need-toggle small { line-height: 1.35; }
