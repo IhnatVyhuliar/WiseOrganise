@@ -44,6 +44,14 @@ class AreaId(str, Enum):
 
     AFTER_EVENT = "po-wydarzeniu"
 
+    VENUE = "miejsce-i-sala"
+
+    ENERGY = "energia-i-woda"
+
+    COMMS = "komunikacja"
+
+    ACCESSIBILITY = "dostepnosc"
+
 
 
 class SixR(str, Enum):

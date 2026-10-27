@@ -1,0 +1,43 @@
+/* Step 2 of the creator ("Potrzeby") and the milestone grouping of the guide.
+   Hand-written semantic classes in the vocabulary of global.css; no utilities. */
+
+.needs-panel .needs-intro p{max-width:62ch}
+.needs-grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+
+.need-toggle{display:flex;gap:13px;align-items:flex-start;text-align:left;width:100%;padding:16px 18px;border:1.5px solid var(--line);border-radius:17px;background:#fff;color:var(--ink)}
+.need-toggle:hover{border-color:var(--ink)}
+.need-toggle.on{border-color:var(--green);background:var(--soft)}
+.need-toggle strong{display:block;font-size:1.02rem}
+.need-toggle small{display:block;color:#6f7b74;font-size:.82rem;margin-top:3px}
+.need-toggle .need-mark{flex:0 0 auto;width:24px;height:24px;margin-top:2px;border:1.5px solid var(--line);border-radius:8px;display:inline-flex;align-items:center;justify-content:center;background:#fff;color:transparent}
+.need-toggle.on .need-mark{background:var(--green);border-color:var(--green);color:#fff}
+
+.needs-summary{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:.95rem;color:#4d5a52}
+.needs-summary strong{color:var(--ink)}
+.needs-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+
+/* Guide: one block of organizer tasks per lifecycle milestone. */
+.milestone-group{display:grid;gap:11px}
+.milestone-group+.milestone-group{margin-top:22px}
+.milestone-heading{display:flex;flex-wrap:wrap;gap:9px;align-items:baseline}
+.milestone-heading small{color:#6f7b74;font-size:.82rem}
+
+/* The AI suggestion is an offer, not a gate: the toggles below stay usable. */
+.needs-ai {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+}
+
+.needs-ai-note {
+  display: flex;
+  gap: 10px;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  padding: 13px 15px;
+  border-radius: 13px;
+}
+
+.needs-ai-note p { color: #314038; }
+
+.need-toggle small { line-height: 1.35; }

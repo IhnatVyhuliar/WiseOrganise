@@ -6,6 +6,10 @@ from pydantic import Field
 
 from . import APIModel
 
+from .criteria import AreaCriterion
+
+from .eguide import RiskFlag
+
 from .enums import AreaId, CostEffect, LifecycleStage, SixR
 
 
@@ -43,6 +47,10 @@ class EventArea(APIModel):
     levels: list[OptionLevel] = Field(min_length=3, max_length=3)
 
     provider_questions: list[str] = Field(default_factory=list, serialization_alias="providerQuestions")
+
+    criteria: list[AreaCriterion] = Field(default_factory=list)
+
+    greenwashing_risks: list[RiskFlag] = Field(default_factory=list, serialization_alias="greenwashingRisks")
 
     note: str | None = None
 

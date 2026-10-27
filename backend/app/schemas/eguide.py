@@ -52,6 +52,8 @@ class ImpactSummary(APIModel):
 
     emission_factor_sources: list[str] = Field(default_factory=list)
 
+    provenance: list[str] = Field(default_factory=list)
+
     eco_motivator: EcoMotivator
 
 
@@ -66,11 +68,27 @@ class OrganizerChecklistItem(APIModel):
 
     area: str
 
+    area_id: AreaId | None = None
+
     label: str
 
     milestone: Milestone | None = None
 
     is_done: bool = False
+
+
+
+class ChecklistDoneUpdate(APIModel):
+
+    """Single checkbox toggle coming from the guide view."""
+
+    item_id: str
+
+    is_done: bool
+
+    role: str | None = None
+
+    task: str | None = None
 
 
 
@@ -91,6 +109,8 @@ class RiskFlag(APIModel):
     vendor_name: str = "Neutralna kategoria dostawcy"
 
     claim: str
+
+    area_ids: list[AreaId] = Field(default_factory=list, serialization_alias="areaIds")
 
     flag: FlagColor
 

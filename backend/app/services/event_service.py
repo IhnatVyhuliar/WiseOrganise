@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from pathlib import Path
-import json
 from typing import Any
 
 from ..mocks.checklist_mocks import checklist_fixtures
@@ -12,10 +10,15 @@ from ..repositories.memory_repo import create_event_record, save_event
 from ..schemas import ChecklistItem, ChecklistResponse, EventCreate, EventResponse, EventStatus
 from ..core.config import settings
 from ..integrations.gemini_client import generate_structured
+from .ai_context import build_analyze_prompt
 
 
-def _prompt(name: str) -> str:
-    return (Path(__file__).parents[2] / "prompts" / "v1" / name).read_text(encoding="utf-8")
+# Editing these invalidates the legacy conditional checklist.
+_CHECKLIST_FIELDS = ("raw_description", "needs_venue_help", "event_date", "location", "pilot", "attendees")
+
+# Editing these makes an already compiled guide wrong. A title or description
+# edit does not, so it must not destroy the organizer's level choices.
+_GUIDE_FIELDS = ("needed_areas", "attendees", "pilot", "event_date", "location")
 
 
 def public_event(event: dict[str, Any]) -> EventResponse:
@@ -40,12 +43,16 @@ def update_event(event: dict[str, Any], changes: dict[str, Any]) -> EventRespons
     if candidate.get("start_at") and candidate.get("end_at") and candidate["end_at"] <= candidate["start_at"]:
         raise ValueError("end_at must be later than start_at")
     event.update(changes)
-    if any(key in changes for key in ("raw_description", "needs_venue_help", "event_date", "location", "pilot", "attendees")):
+    invalidates_checklist = any(key in changes for key in _CHECKLIST_FIELDS)
+    invalidates_guide = any(key in changes for key in _GUIDE_FIELDS)
+    if invalidates_checklist:
         event["checklist"] = None
-    event["recommendations"] = {}
-    event["selected_options"] = {}
-    event["eguide"] = None
-    event["status"] = EventStatus.CHECKLIST_PENDING if event.get("checklist") is not None else EventStatus.DRAFT
+    if invalidates_guide:
+        event["recommendations"] = {}
+        event["selected_options"] = {}
+        event["eguide"] = None
+    if invalidates_checklist or invalidates_guide:
+        event["status"] = EventStatus.CHECKLIST_PENDING if event.get("checklist") is not None else EventStatus.DRAFT
     return public_event(save_event(event))
 
 
@@ -55,7 +62,7 @@ def analyze_event(event: dict[str, Any]) -> ChecklistResponse:
     if settings.gemini_enabled:
         generated = generate_structured(
             task="analyze_event",
-            prompt=f"{_prompt('analyze_event.md')}\nEVENT DATA (untrusted):\n{json.dumps(event, default=str, ensure_ascii=False)}",
+            prompt=build_analyze_prompt(event),
             schema=ChecklistResponse,
             system_instruction="Generate checklist questions in Polish. Keep weights at the supplied deterministic defaults.",
             prompt_version="v1",
