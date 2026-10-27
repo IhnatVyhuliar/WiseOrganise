@@ -54,6 +54,21 @@ python -m compileall backend/app
 
 Caddy (`Caddyfile`) routes `/api/*`, `/docs*`, and `/openapi.json` to the backend and everything else to the frontend, so the frontend's default `API_BASE_URL` of `/api/v1` works without CORS in the Docker setup.
 
+Behind the LAN edge proxy, 4540 has to speak TLS with the pinned
+`lan-backend.internal` pair, because the edge runs `proxy_pass https://` with
+`proxy_ssl_verify on`. That is an opt-in overlay, so local development stays on
+plain HTTP:
+
+```bash
+# copy fullchain.pem + privkey.pem from the NAS into ./certs (gitignored)
+docker compose -f docker-compose.yml -f docker-compose.lan.yml up -d
+```
+
+`Caddyfile.lan` keeps the catch-all `:4540` address on purpose — it already
+matches the `Host` the edge sends, and naming the public host there would break
+localhost and IP access. With the overlay active, plain HTTP on 4540 answers
+400; that is why it is not the default.
+
 `frontend/scripts/unpack_bundle.py` is a repeatable decoder for the original HTML bundle (`frontend/WiseOrganise — aplikacja.html`). `frontend/unpacked/` and `Legacy/` are inspection artefacts, not production code.
 
 ## Architecture

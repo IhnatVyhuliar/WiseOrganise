@@ -41,3 +41,13 @@
 .needs-ai-note p { color: #314038; }
 
 .need-toggle small { line-height: 1.35; }
+
+.needs-ai-note.waiting { align-items: center; }
+
+.needs-ai-note.waiting svg { flex: none; color: var(--green-dark); }
+
+.spin { animation: spin 1s linear infinite; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }

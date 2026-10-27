@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, ChevronDown, Info, ListChecks, Sparkles } from 'lucide-react';
+import { Check, ChevronDown, Info, ListChecks, Loader2, Sparkles } from 'lucide-react';
 import type { AreaSuggestionResponse } from '../../lib/api';
 import type { AreaId, EventArea } from '../../types';
 import '../../styles/needs.css';
@@ -34,7 +34,8 @@ export function NeedsStep({ areas, value, onConfirm, onBack, onSuggest }: { area
     <div className="section-title"><ListChecks size={20} /><div className="needs-intro"><h2>Czego potrzebujesz na wydarzeniu?</h2><p>Zaznacz tylko te obszary, które naprawdę wystąpią. Poradnik i checklisty pokażą zadania wyłącznie dla nich — reszta zniknie z Twojej listy.</p></div></div>
     <div className="needs-ai">
       <button className="button secondary" type="button" onClick={suggest} disabled={suggesting}><Sparkles size={17} /> {suggesting ? 'Pytam AI…' : 'Zaproponuj obszary na podstawie opisu (AI)'}</button>
-      {suggestion && <div className={suggestion.available ? 'needs-ai-note' : 'notice'}>{!suggestion.available && <Info size={18} />}<p>{suggestion.message}</p></div>}
+      {suggesting && <div className="needs-ai-note waiting"><Loader2 size={18} className="spin" /><p>Czytam opis i dobieram obszary. To zwykle trwa kilkanaście sekund — nie zamykaj tego kroku.</p></div>}
+      {!suggesting && suggestion && <div className={suggestion.available ? 'needs-ai-note' : 'notice'}>{!suggestion.available && <Info size={18} />}<p>{suggestion.message}</p></div>}
     </div>
     <div className="needs-grid">
       {areas.map((area) => {

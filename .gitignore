@@ -20,3 +20,6 @@ dist/
 .idea/
 .vscode/
 .DS_Store
+
+# LAN edge certificate pair copied from the NAS; never commit the private key.
+certs/
