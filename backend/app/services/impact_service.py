@@ -4,6 +4,7 @@ from copy import deepcopy
 from typing import Any
 from ..mocks.knowledge_mocks import ECO_SUMMARY, EVENT_AREAS
 from ..schemas import EcoMotivator
+from .checklist_builder import needed_area_ids
 
 # Ambition weight of each level. Only the relative size matters: the weights are
 # normalised against the best achievable total and never used as kilograms.
@@ -35,14 +36,19 @@ def build_impact(event: dict[str, Any]) -> dict[str, Any]:
     selected = event.get("selected_options", {})
     saving_choices = 0
     ambition = 0.0
-    for area in EVENT_AREAS:
+    # Only the areas this event actually needs are in scope. Scoring an event
+    # against areas the organizer ruled out would cap its ambition at the share
+    # of areas it declared, however good its choices are.
+    in_scope = set(needed_area_ids(event))
+    areas = [area for area in EVENT_AREAS if area["id"] in in_scope]
+    for area in areas:
         level = selected.get(area["id"])
         item = next((option for option in area["levels"] if option["level"] == level), None)
         if item:
             if item["cost"] == "Obniża koszt":
                 saving_choices += 1
             ambition += _AMBITION_BY_LEVEL.get(level, 0.0)
-    area_count = len(EVENT_AREAS) or 1
+    area_count = len(areas) or 1
     best_total = area_count * _BEST_LEVEL_WEIGHT
     # 0.0 when nothing is selected, 1.0 when every area sits at "najlepiej".
     ambition_ratio = min(1.0, ambition / best_total) if best_total else 0.0

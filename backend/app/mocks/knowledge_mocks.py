@@ -1,69 +1,154 @@
-"""Polish static knowledge base derived from the mentor summary."""
-from __future__ import annotations
-from copy import deepcopy
-from typing import Any
-
-SIX_R = [
- {"rank":1,"name":"Przemy\u015bl","description":"Czy to w og\u00f3le jest potrzebne na wydarzeniu?"},
- {"rank":2,"name":"Rezygnuj","description":"Odm\u00f3w tego, co zb\u0119dne: gad\u017cet\u00f3w, druku i jednorazowych sztu\u0107c\u00f3w."},
- {"rank":3,"name":"Ograniczaj","description":"Zam\u00f3w tyle, ile trzeba, na przyk\u0142ad porcje wed\u0142ug rejestracji."},
- {"rank":4,"name":"U\u017cywaj ponownie","description":"Wybieraj naczynia, smycze i wyposa\u017cenie wielorazowe."},
- {"rank":5,"name":"Naprawiaj","description":"Naprawiaj wyposa\u017cenie i dekoracje, aby s\u0142u\u017cy\u0142y kolejnym edycjom."},
- {"rank":6,"name":"Recykling","description":"Segreguj tylko to, czego nie da\u0142o si\u0119 unikn\u0105\u0107."},
-]
-
-def option(level: int, label: str, description: str, why: str, cost: str, tags: list[str], six_r: list[str]) -> dict[str, Any]:
-    return {"level": level, "label": label, "description": description, "why": why, "cost": cost, "tags": tags, "use_ai_suggestions": True, "six_r": six_r}
-
-def area(area_id: str, name: str, stage: str, lead: str, questions: list[str], levels: list[dict[str, Any]], note: str | None = None) -> dict[str, Any]:
-    value = {"id":area_id,"name":name,"stage":stage,"lead":lead,"provider_questions":questions,"levels":levels}
-    if note: value["note"] = note
-    return value
-
-EVENT_AREAS = [
- area("dojazd","Dojazd","Przed","Dojazd uczestnik\u00f3w zwykle wa\u017cy najwi\u0119cej. Pilot U\u0141 \u0142\u0105czy kolej, autobusy elektryczne i godzin\u0119 startu dopasowan\u0105 do rozk\u0142adu.",["Czy przewo\u017anik ma pojazdy elektryczne?","Czy kursy mo\u017cna dopasowa\u0107 do godzin wydarzenia?","Czy jest oferta grupowa?"],[
-  option(1,"minimum","Informacja o dojazdach transportem zbiorowym w zaproszeniu i na stronie.","Jasna informacja od pocz\u0105tku pomaga wybra\u0107 kolej lub autobus zamiast samochodu.","Bez dodatkowych koszt\u00f3w",["Transport niskoemisyjny"],["Przemy\u015bl"]),
-  option(2,"lepiej","Start i koniec dopasowane do rozk\u0142adu poci\u0105g\u00f3w oraz organizacja wsp\u00f3lnych przejazd\u00f3w.","Godzina wydarzenia nie wyklucza kolei, a wsp\u00f3lny przejazd zmniejsza liczb\u0119 aut.","Bez dodatkowych koszt\u00f3w",["Transport niskoemisyjny","Ca\u0142y cykl \u017cycia"],["Ograniczaj"]),
-  option(3,"najlepiej","Zni\u017cka za dojazd zbiorowy, gra dla uczestnik\u00f3w i autobus elektryczny z dworca.","Zach\u0119ta sprawia, \u017ce transport zbiorowy jest wygodny i op\u0142acalny.","Wymaga bud\u017cetu",["Transport niskoemisyjny","Zach\u0119ty"],["Ograniczaj"])]),
- area("zakwaterowanie","Zakwaterowanie","Przed","Nocleg przy miejscu wydarzenia lub przystanku ogranicza codzienne przejazdy.",["Jaka jest odleg\u0142o\u015b\u0107 od miejsca wydarzenia?","Czy da si\u0119 dojecha\u0107 bez samochodu?","Jak obiekt gospodaruje odpadami i energi\u0105?"],[
-  option(1,"minimum","Lista nocleg\u00f3w z dobrym dojazdem komunikacj\u0105 miejsk\u0105.","Przystanek w pobli\u017cu oznacza, \u017ce uczestnik nie potrzebuje auta.","Bez dodatkowych koszt\u00f3w",["Transport niskoemisyjny"],["Przemy\u015bl"]),
-  option(2,"lepiej","Noclegi w odleg\u0142o\u015bci kr\u00f3tkiego spaceru od miejsca wydarzenia.","Codzienny dojazd znika z bilansu, gdy mo\u017cna przej\u015b\u0107 si\u0119 pieszo.","Zale\u017cy od oferty",["Lokalno\u015b\u0107","Transport niskoemisyjny"],["Ograniczaj"]),
-  option(3,"najlepiej","Noclegi pieszo, wybrane wed\u0142ug kryteri\u00f3w \u015brodowiskowych i spo\u0142ecznych.","Liczy si\u0119 odleg\u0142o\u015b\u0107, odpady, energia i mo\u017cliwo\u015b\u0107 rezygnacji z samochodu.","Zale\u017cy od oferty",["Lokalno\u015b\u0107","Kryteria dostawc\u00f3w"],["Ograniczaj"])]),
- area("catering","Catering","W trakcie","Lokalne i sezonowe jedzenie, porcje wed\u0142ug rejestracji oraz naczynia wielorazowe \u0142\u0105cz\u0105 wp\u0142yw z oszcz\u0119dno\u015bci\u0105.",["Sk\u0105d s\u0105 sk\u0142adniki i ile kilometr\u00f3w jad\u0105?","Ile sk\u0142adnik\u00f3w jest sezonowych?","Czy naczynia s\u0105 wielorazowe?","Co dzieje si\u0119 z nadwy\u017ckami jedzenia?"],[
-  option(1,"minimum","Porcje wed\u0142ug rejestracji i woda z dystrybutor\u00f3w zamiast butelek.","Dok\u0142adne porcje ograniczaj\u0105 odpady i koszt zam\u00f3wienia.","Obni\u017ca koszt",["6R Ograniczaj","6R Rezygnuj"],["Ograniczaj"]),
-  option(2,"lepiej","Produkty lokalne i sezonowe, bez egzotycznych sk\u0142adnik\u00f3w, oraz naczynia wielorazowe.","Jab\u0142ka z sadu pod \u0141odzi\u0105 zast\u0119puj\u0105 produkty wo\u017cone z daleka.","Zale\u017cy od oferty",["Lokalno\u015b\u0107","Sezonowo\u015b\u0107","6R U\u017cywaj ponownie"],["U\u017cywaj ponownie"]),
-  option(3,"najlepiej","Dostawcy z najbli\u017cszej okolicy, bez jednorazowych sztu\u0107c\u00f3w i z planem na nadwy\u017cki.","Kr\u00f3tka dostawa, brak odpad\u00f3w u \u017ar\u00f3d\u0142a i ustalony odbi\u00f3r nadwy\u017cek domykaj\u0105 obieg.","Zale\u017cy od oferty",["Lokalno\u015b\u0107 \u2264 20 km","6R Rezygnuj","Gospodarka cyrkularna"],["Rezygnuj","U\u017cywaj ponownie"])],"Naczynia wielorazowe stoj\u0105 wy\u017cej w 6R ni\u017c biodegradowalne jednoraz\u00f3wki. Biodegradowalne maj\u0105 sens tylko z realnym kompostowaniem."),
- area("materialy","Materia\u0142y","W trakcie","Ka\u017cda niewydrukowana strona to mniej zu\u017cytych zasob\u00f3w i ni\u017cszy koszt.",["Czy ta rzecz jest w og\u00f3le potrzebna?","Z czego jest zrobiona?","Czy da si\u0119 jej u\u017cy\u0107 ponownie?"],[
-  option(1,"minimum","Druk ograniczony do minimum, dwustronnie i na papierze z recyklingu.","Powstaje tylko to, bez czego wydarzenie si\u0119 nie obejdzie.","Obni\u017ca koszt",["6R Ograniczaj"],["Ograniczaj"]),
-  option(2,"lepiej","Agenda i materia\u0142y cyfrowe na stronie oraz przez kod QR.","Zmiana programu nie wymaga dodruku.","Obni\u017ca koszt",["6R Rezygnuj"],["Rezygnuj"]),
-  option(3,"najlepiej","Zero druku, materia\u0142y online dost\u0119pne tak\u017ce po wydarzeniu.","Tre\u015bci \u017cyj\u0105 d\u0142u\u017cej ni\u017c wydarzenie i nie trafiaj\u0105 do kosza.","Obni\u017ca koszt",["6R Rezygnuj","Ca\u0142y cykl \u017cycia"],["Rezygnuj"])]),
- area("gadzety","Gad\u017cety","W trakcie","Najpierw pytamy, czy gad\u017cet jest potrzebny. Najlepszy odpad to ten, kt\u00f3ry nie powsta\u0142.",["Czy ta rzecz jest w og\u00f3le potrzebna?","Z czego jest zrobiona?","Czy da si\u0119 jej u\u017cy\u0107 ponownie?"],[
-  option(1,"minimum","U\u017cyteczne gad\u017cety bez daty i numeru edycji.","Bez daty da si\u0119 u\u017cy\u0107 rzeczy ponownie.","Zale\u017cy od oferty",["6R U\u017cywaj ponownie"],["U\u017cywaj ponownie"]),
-  option(2,"lepiej","Smycze i identyfikatory zbierane po wydarzeniu i u\u017cywane ponownie.","Zwrot wyposa\u017cenia obni\u017ca koszt kolejnych edycji.","Obni\u017ca koszt",["6R U\u017cywaj ponownie","Gospodarka cyrkularna"],["U\u017cywaj ponownie"]),
-  option(3,"najlepiej","Rezygnacja z gad\u017cet\u00f3w zgodnie z zasad\u0105 \"Rezygnuj\".","Nie trzeba produkowa\u0107, transportowa\u0107 ani utylizowa\u0107 niepotrzebnych rzeczy.","Obni\u017ca koszt",["6R Rezygnuj"],["Rezygnuj"])]),
- area("ludzie","Ludzie / obs\u0142uga","W trakcie","Zr\u00f3wnowa\u017cenie obejmuje warunki pracy: jasne zadania, umow\u0119 o prac\u0119 i lokalno\u015b\u0107 obs\u0142ugi.",["Na jakiej umowie pracuje obs\u0142uga?","Czy obs\u0142uga jest lokalna?","Jak daleko obs\u0142uga doje\u017cd\u017ca do miejsca wydarzenia?"],[
-  option(1,"minimum","Jasny podzia\u0142 zada\u0144 i checklista dla ka\u017cdej osoby.","Odpowiedzialno\u015b\u0107 nie ginie mi\u0119dzy zespo\u0142ami.","Bez dodatkowych koszt\u00f3w",["Organizacja zespo\u0142u"],["Przemy\u015bl"]),
-  option(2,"lepiej","Dostawcy i obs\u0142uga zatrudnieni na umowie o prac\u0119.","Godna praca jest cz\u0119\u015bci\u0105 zr\u00f3wnowa\u017conego wydarzenia.","Zale\u017cy od oferty",["Umowa o prac\u0119"],["Przemy\u015bl"]),
-  option(3,"najlepiej","Lokalna obs\u0142uga na umowie o prac\u0119, z kr\u00f3tkim dojazdem.","Wspierasz region i ograniczasz dojazdy personelu.","Zale\u017cy od oferty",["Umowa o prac\u0119","Lokalno\u015b\u0107"],["Ograniczaj"])]),
- area("po-wydarzeniu","Po wydarzeniu","Po","Cykl ko\u0144czy si\u0119 po powrocie uczestnik\u00f3w, pomiarze odpad\u00f3w i zapisaniu lekcji na kolejn\u0105 edycj\u0119.",["Jak zbierzemy ankiet\u0119 dojazdu?","Jak zwa\u017cymy odpady wed\u0142ug rodzaj\u00f3w?","Jakie dane z faktur s\u0105 potrzebne?"],[
-  option(1,"minimum","Segregacja odpad\u00f3w na miejscu.","Recykling jest ostatnim krokiem 6R i dotyczy tego, czego nie unikni\u0119to.","Bez dodatkowych koszt\u00f3w",["6R Recykling"],["Recykling"]),
-  option(2,"lepiej","Pomiar odpad\u00f3w i ankieta dojazdu uczestnik\u00f3w.","Dane pokazuj\u0105, czy wybory zadzia\u0142a\u0142y.","Wymaga czasu zespo\u0142u",["Ca\u0142y cykl \u017cycia"],["Recykling"]),
-  option(3,"najlepiej","Por\u00f3wnanie wp\u0142ywu przed i po oraz wnioski na nast\u0119pn\u0105 edycj\u0119.","Raport zamienia do\u015bwiadczenie w konkretne ulepszenia.","Wymaga czasu zespo\u0142u",["Ca\u0142y cykl \u017cycia"],["Recykling"])])
-]
-VENDOR_CRITERIA = [
- {"name":"Pochodzenie i odleg\u0142o\u015b\u0107","jak_sprawdzic":"Zapytaj, sk\u0105d pochodz\u0105 produkty i ile kilometr\u00f3w jad\u0105.","sygnal_ostrzegawczy":"\"Lokalne\" bez podania miejsca pochodzenia."},
- {"name":"Sezonowo\u015b\u0107","jak_sprawdzic":"Por\u00f3wnaj propozycj\u0119 z sezonem w regionie.","sygnal_ostrzegawczy":"Egzotyczne lub poza sezonem produkty w ofercie \"eko\"."},
- {"name":"Opakowania i odpady","jak_sprawdzic":"Zapytaj o naczynia wielorazowe i odbi\u00f3r zwrotny.","sygnal_ostrzegawczy":"Jednorazowe \"ekologiczne\" bez systemu zagospodarowania."},
- {"name":"Transport dostawy","jak_sprawdzic":"Zapytaj o flot\u0119 i \u0142\u0105czenie dostaw.","sygnal_ostrzegawczy":"Brak odpowiedzi lub wiele osobnych kurs\u00f3w."},
- {"name":"Zatrudnienie na umow\u0119 o prac\u0119","jak_sprawdzic":"Zapytaj o form\u0119 zatrudnienia sta\u0142ego personelu.","sygnal_ostrzegawczy":"Brak umowy o prac\u0119 dla sta\u0142ego personelu."},
- {"name":"Dowody zamiast hase\u0142","jak_sprawdzic":"Popro\u015b o certyfikaty lub dane mo\u017cliwe do weryfikacji.","sygnal_ostrzegawczy":"Og\u00f3lne \"eko\", \"zielony\" lub \"neutralny klimatycznie\" bez dowod\u00f3w."},
- {"name":"Przejrzysto\u015b\u0107","jak_sprawdzic":"Sprawd\u017a, czy firma publikuje konkretne dane o wp\u0142ywie.","sygnal_ostrzegawczy":"Wy\u0142\u0105cznie marketing, brak liczb."},
-]
-AREA_QUESTIONS = [{"area_id":a["id"],"area_name":a["name"],"pytania_do_dostawcy":a["provider_questions"]} for a in EVENT_AREAS]
-ORGANIZER_CHECKLIST = [{"id":"o1","area":"Dojazd","area_id":"dojazd","label":"Sprawd\u017a po\u0142\u0105czenia kolejowe i autobusowe do U\u0141 oraz dopasuj godzin\u0119 rozpocz\u0119cia do poci\u0105g\u00f3w.","milestone":"T-60","min_level":1},{"id":"o2","area":"Dojazd","area_id":"dojazd","label":"Dodaj transport zbiorowy do zaproszenia i strony wydarzenia.","milestone":"T-30","min_level":1},{"id":"o3","area":"Dojazd","area_id":"dojazd","label":"Uruchom zapisy na wsp\u00f3lne przejazdy.","milestone":"T-30","min_level":2},{"id":"o4","area":"Zakwaterowanie","area_id":"zakwaterowanie","label":"Przygotuj list\u0119 nocleg\u00f3w w zasi\u0119gu spaceru lub komunikacji.","milestone":"T-60","min_level":1},{"id":"o5","area":"Catering","area_id":"catering","label":"Zam\u00f3w porcje wed\u0142ug rejestracji i ustal odbi\u00f3r nadwy\u017cek.","milestone":"T-30","min_level":1},{"id":"o6","area":"Materia\u0142y","area_id":"materialy","label":"Opublikuj agend\u0119 online z kodem QR zamiast druku.","milestone":"T-7","min_level":2},{"id":"o7","area":"Ludzie","area_id":"ludzie","label":"Wy\u015blij dostawcom pytania o kryteria, w tym o umow\u0119 o prac\u0119.","milestone":"T-30","min_level":2},{"id":"o8","area":"Po wydarzeniu","area_id":"po-wydarzeniu","label":"Zaplanuj wag\u0119 odpad\u00f3w i ankiet\u0119 dojazdu.","milestone":"T-0","min_level":1},{"id":"o9","area":"Gad\u017cety","area_id":"gadzety","label":"Sprawd\u017a, czy gad\u017cety s\u0105 w og\u00f3le potrzebne, zanim wy\u015blesz zapytanie do dostawcy.","milestone":"T-60","min_level":1},{"id":"o10","area":"Gad\u017cety","area_id":"gadzety","label":"Zam\u00f3w gad\u017cety bez daty i numeru edycji, \u017ceby pos\u0142u\u017cy\u0142y kolejny raz.","milestone":"T-30","min_level":1},{"id":"o11","area":"Gad\u017cety","area_id":"gadzety","label":"Ustaw punkt zwrotu smyczy i identyfikator\u00f3w przy wyj\u015bciu.","milestone":"T-0","min_level":2},{"id":"o12","area":"Gad\u017cety","area_id":"gadzety","label":"Potwierd\u017a rezygnacj\u0119 z gad\u017cet\u00f3w i wykre\u015bl je z bud\u017cetu wydarzenia.","milestone":"T-60","min_level":3},{"id":"o13","area":"Dojazd","area_id":"dojazd","label":"Uzgodnij zni\u017ck\u0119 za dojazd zbiorowy i autobus elektryczny z dworca.","milestone":"T-30","min_level":3},{"id":"o14","area":"Zakwaterowanie","area_id":"zakwaterowanie","label":"Zweryfikuj noclegi wed\u0142ug kryteri\u00f3w \u015brodowiskowych i spo\u0142ecznych.","milestone":"T-30","min_level":3},{"id":"o15","area":"Catering","area_id":"catering","label":"Potwierd\u017a brak jednorazowych sztu\u0107c\u00f3w i um\u00f3w odbi\u00f3r nadwy\u017cek jedzenia.","milestone":"T-7","min_level":3},{"id":"o16","area":"Materia\u0142y","area_id":"materialy","label":"Ogranicz druk do niezb\u0119dnego minimum i wybierz papier z recyklingu.","milestone":"T-30","min_level":1},{"id":"o17","area":"Ludzie","area_id":"ludzie","label":"Rozpisz zadania i checklist\u0119 dla ka\u017cdej osoby w zespole.","milestone":"T-60","min_level":1},{"id":"o18","area":"Po wydarzeniu","area_id":"po-wydarzeniu","label":"Zbierz ankiet\u0119 dojazdu i zwa\u017c odpady wed\u0142ug frakcji.","milestone":"T+7","min_level":2},{"id":"o19","area":"Po wydarzeniu","area_id":"po-wydarzeniu","label":"Por\u00f3wnaj wp\u0142yw przed i po oraz zapisz wnioski na nast\u0119pn\u0105 edycj\u0119.","milestone":"T+7","min_level":3},{"id":"o20","area":"Materia\u0142y","area_id":"materialy","label":"Udost\u0119pnij materia\u0142y online tak\u017ce po wydarzeniu, bez wersji drukowanej.","milestone":"T-7","min_level":3},{"id":"o21","area":"Ludzie","area_id":"ludzie","label":"Potwierd\u017a, \u017ce obs\u0142uga jest lokalna i doje\u017cd\u017ca bez samochodu.","milestone":"T-30","min_level":3}]
-TEAM_ROLES = [{"role":"Transport","contact":"[IMI\u0118 I NAZWISKO \u00b7 TELEFON / E-MAIL]","tasks":["Rozk\u0142ad poci\u0105g\u00f3w i godzina rozpocz\u0119cia","Wsp\u00f3lne przejazdy","Pytania do przewo\u017anika"],"task_areas":["dojazd","dojazd","dojazd"]},{"role":"Catering","contact":"[IMI\u0118 I NAZWISKO \u00b7 TELEFON / E-MAIL]","tasks":["Porcje zgodne z rejestracj\u0105","Menu lokalne i sezonowe","Odbi\u00f3r nadwy\u017cek jedzenia"],"task_areas":["catering","catering","catering"]},{"role":"Materia\u0142y i gad\u017cety","contact":"[IMI\u0118 I NAZWISKO \u00b7 TELEFON / E-MAIL]","tasks":["Agenda online i kod QR","Smycze bez daty edycji","Zbi\u00f3rka smyczy przy wyj\u015bciu"],"task_areas":["materialy","gadzety","gadzety"]},{"role":"Noclegi i obs\u0142uga","contact":"[IMI\u0118 I NAZWISKO \u00b7 TELEFON / E-MAIL]","tasks":["Lista nocleg\u00f3w w zasi\u0119gu spaceru","Dojazd do noclegu bez samochodu","Forma zatrudnienia obs\u0142ugi","Podzia\u0142 zada\u0144 w zespole"],"task_areas":["zakwaterowanie","zakwaterowanie","ludzie","ludzie"]},{"role":"Po wydarzeniu","contact":"[IMI\u0118 I NAZWISKO \u00b7 TELEFON / E-MAIL]","tasks":["Segregacja na miejscu","Wa\u017cenie odpad\u00f3w","Ankieta o doje\u017adzie"],"task_areas":["po-wydarzeniu","po-wydarzeniu","po-wydarzeniu"]}]
-CONTRACT_CLAUSES = [{"kind":"klauzula","text":"Dostawca przeka\u017ce raport masy odpad\u00f3w wed\u0142ug frakcji w ci\u0105gu 7 dni od wydarzenia."},{"kind":"klauzula","text":"Dostawca potwierdzi pochodzenie produkt\u00f3w, sezonowo\u015b\u0107 i udzia\u0142 naczynia wielorazowego na \u017c\u0105danie organizatora."},{"kind":"pytanie RFP","text":"Jakie mierzalne dane \u015brodowiskowe otrzymamy po realizacji us\u0142ugi?"},{"kind":"pytanie RFP","text":"Kt\u00f3re elementy oferty s\u0105 certyfikowane i kto wyda\u0142 certyfikat?"}]
-GREENWASHING_RISKS = [{"vendor_name":"Neutralna kategoria dostawcy","claim":"\"Lokalne\" bez miejsca pochodzenia","flag":"yellow","explanation":"Has\u0142o nie pozwala sprawdzi\u0107 odleg\u0142o\u015bci ani \u017ar\u00f3d\u0142a produktu.","follow_up":"Popro\u015b o adres gospodarstwa i tras\u0119 dostawy."},{"vendor_name":"Neutralna kategoria dostawcy","claim":"\"Neutralny klimatycznie\" bez danych","flag":"red","explanation":"Deklaracja mo\u017ce opiera\u0107 si\u0119 wy\u0142\u0105cznie na kompensacji.","follow_up":"Popro\u015b o dane emisji i niezale\u017cne potwierdzenie."},{"vendor_name":"Neutralna kategoria dostawcy","claim":"\"Zero odpad\u00f3w\" z raportem frakcji","flag":"green","explanation":"Dostawca pokazuje mas\u0119 frakcji i spos\u00f3b zagospodarowania.","follow_up":"Wpisz obowi\u0105zek raportu do umowy."}]
-ECO_SUMMARY = {"kg_co2e_min":220.0,"kg_co2e_max":480.0,"optimized_kg_co2e_min":120.0,"optimized_kg_co2e_max":270.0,"saved_pln":80.0,"emission_factor_sources":["Dane demonstracyjne transportu, cateringu i odpad\u00f3w","Ankieta dojazdu, waga odpad\u00f3w i faktury dostawc\u00f3w"]}
-def knowledge_base() -> dict[str, Any]:
-    return deepcopy({"six_r":SIX_R,"areas":EVENT_AREAS,"criteria":VENDOR_CRITERIA,"area_questions":AREA_QUESTIONS})
+"""Polish static knowledge base derived from the mentor summary."""
+
+from __future__ import annotations
+
+from copy import deepcopy
+
+from typing import Any
+
+
+
+SIX_R = [
+
+ {"rank":1,"name":"Przemy\u015bl","description":"Czy to w og\u00f3le jest potrzebne na wydarzeniu?"},
+
+ {"rank":2,"name":"Rezygnuj","description":"Odm\u00f3w tego, co zb\u0119dne: gad\u017cet\u00f3w, druku i jednorazowych sztu\u0107c\u00f3w."},
+
+ {"rank":3,"name":"Ograniczaj","description":"Zam\u00f3w tyle, ile trzeba, na przyk\u0142ad porcje wed\u0142ug rejestracji."},
+
+ {"rank":4,"name":"U\u017cywaj ponownie","description":"Wybieraj naczynia, smycze i wyposa\u017cenie wielorazowe."},
+
+ {"rank":5,"name":"Naprawiaj","description":"Naprawiaj wyposa\u017cenie i dekoracje, aby s\u0142u\u017cy\u0142y kolejnym edycjom."},
+
+ {"rank":6,"name":"Recykling","description":"Segreguj tylko to, czego nie da\u0142o si\u0119 unikn\u0105\u0107."},
+
+]
+
+
+
+def option(level: int, label: str, description: str, why: str, cost: str, tags: list[str], six_r: list[str]) -> dict[str, Any]:
+
+    return {"level": level, "label": label, "description": description, "why": why, "cost": cost, "tags": tags, "use_ai_suggestions": True, "six_r": six_r}
+
+
+
+def area(area_id: str, name: str, stage: str, lead: str, questions: list[str], levels: list[dict[str, Any]], note: str | None = None) -> dict[str, Any]:
+
+    value = {"id":area_id,"name":name,"stage":stage,"lead":lead,"provider_questions":questions,"levels":levels}
+
+    if note: value["note"] = note
+
+    return value
+
+
+
+EVENT_AREAS = [
+
+ area("dojazd","Dojazd","Przed","Dojazd uczestnik\u00f3w zwykle wa\u017cy najwi\u0119cej. Pilot U\u0141 \u0142\u0105czy kolej, autobusy elektryczne i godzin\u0119 startu dopasowan\u0105 do rozk\u0142adu.",["Czy przewo\u017anik ma pojazdy elektryczne?","Czy kursy mo\u017cna dopasowa\u0107 do godzin wydarzenia?","Czy jest oferta grupowa?"],[
+
+  option(1,"minimum","Informacja o dojazdach transportem zbiorowym w zaproszeniu i na stronie.","Jasna informacja od pocz\u0105tku pomaga wybra\u0107 kolej lub autobus zamiast samochodu.","Bez dodatkowych koszt\u00f3w",["Transport niskoemisyjny"],["Przemy\u015bl"]),
+
+  option(2,"lepiej","Start i koniec dopasowane do rozk\u0142adu poci\u0105g\u00f3w oraz organizacja wsp\u00f3lnych przejazd\u00f3w.","Godzina wydarzenia nie wyklucza kolei, a wsp\u00f3lny przejazd zmniejsza liczb\u0119 aut.","Bez dodatkowych koszt\u00f3w",["Transport niskoemisyjny","Ca\u0142y cykl \u017cycia"],["Ograniczaj"]),
+
+  option(3,"najlepiej","Zni\u017cka za dojazd zbiorowy, gra dla uczestnik\u00f3w i autobus elektryczny z dworca.","Zach\u0119ta sprawia, \u017ce transport zbiorowy jest wygodny i op\u0142acalny.","Wymaga bud\u017cetu",["Transport niskoemisyjny","Zach\u0119ty"],["Ograniczaj"])]),
+
+ area("zakwaterowanie","Zakwaterowanie","Przed","Nocleg przy miejscu wydarzenia lub przystanku ogranicza codzienne przejazdy.",["Jaka jest odleg\u0142o\u015b\u0107 od miejsca wydarzenia?","Czy da si\u0119 dojecha\u0107 bez samochodu?","Jak obiekt gospodaruje odpadami i energi\u0105?"],[
+
+  option(1,"minimum","Lista nocleg\u00f3w z dobrym dojazdem komunikacj\u0105 miejsk\u0105.","Przystanek w pobli\u017cu oznacza, \u017ce uczestnik nie potrzebuje auta.","Bez dodatkowych koszt\u00f3w",["Transport niskoemisyjny"],["Przemy\u015bl"]),
+
+  option(2,"lepiej","Noclegi w odleg\u0142o\u015bci kr\u00f3tkiego spaceru od miejsca wydarzenia.","Codzienny dojazd znika z bilansu, gdy mo\u017cna przej\u015b\u0107 si\u0119 pieszo.","Zale\u017cy od oferty",["Lokalno\u015b\u0107","Transport niskoemisyjny"],["Ograniczaj"]),
+
+  option(3,"najlepiej","Noclegi pieszo, wybrane wed\u0142ug kryteri\u00f3w \u015brodowiskowych i spo\u0142ecznych.","Liczy si\u0119 odleg\u0142o\u015b\u0107, odpady, energia i mo\u017cliwo\u015b\u0107 rezygnacji z samochodu.","Zale\u017cy od oferty",["Lokalno\u015b\u0107","Kryteria dostawc\u00f3w"],["Ograniczaj"])]),
+
+ area("catering","Catering","W trakcie","Lokalne i sezonowe jedzenie, porcje wed\u0142ug rejestracji oraz naczynia wielorazowe \u0142\u0105cz\u0105 wp\u0142yw z oszcz\u0119dno\u015bci\u0105.",["Sk\u0105d s\u0105 sk\u0142adniki i ile kilometr\u00f3w jad\u0105?","Ile sk\u0142adnik\u00f3w jest sezonowych?","Czy naczynia s\u0105 wielorazowe?","Co dzieje si\u0119 z nadwy\u017ckami jedzenia?"],[
+
+  option(1,"minimum","Porcje wed\u0142ug rejestracji i woda z dystrybutor\u00f3w zamiast butelek.","Dok\u0142adne porcje ograniczaj\u0105 odpady i koszt zam\u00f3wienia.","Obni\u017ca koszt",["6R Ograniczaj","6R Rezygnuj"],["Ograniczaj"]),
+
+  option(2,"lepiej","Produkty lokalne i sezonowe, bez egzotycznych sk\u0142adnik\u00f3w, oraz naczynia wielorazowe.","Jab\u0142ka z sadu pod \u0141odzi\u0105 zast\u0119puj\u0105 produkty wo\u017cone z daleka.","Zale\u017cy od oferty",["Lokalno\u015b\u0107","Sezonowo\u015b\u0107","6R U\u017cywaj ponownie"],["U\u017cywaj ponownie"]),
+
+  option(3,"najlepiej","Dostawcy z najbli\u017cszej okolicy, bez jednorazowych sztu\u0107c\u00f3w i z planem na nadwy\u017cki.","Kr\u00f3tka dostawa, brak odpad\u00f3w u \u017ar\u00f3d\u0142a i ustalony odbi\u00f3r nadwy\u017cek domykaj\u0105 obieg.","Zale\u017cy od oferty",["Lokalno\u015b\u0107 \u2264 20 km","6R Rezygnuj","Gospodarka cyrkularna"],["Rezygnuj","U\u017cywaj ponownie"])],"Naczynia wielorazowe stoj\u0105 wy\u017cej w 6R ni\u017c biodegradowalne jednoraz\u00f3wki. Biodegradowalne maj\u0105 sens tylko z realnym kompostowaniem."),
+
+ area("materialy","Materia\u0142y","W trakcie","Ka\u017cda niewydrukowana strona to mniej zu\u017cytych zasob\u00f3w i ni\u017cszy koszt.",["Czy ta rzecz jest w og\u00f3le potrzebna?","Z czego jest zrobiona?","Czy da si\u0119 jej u\u017cy\u0107 ponownie?"],[
+
+  option(1,"minimum","Druk ograniczony do minimum, dwustronnie i na papierze z recyklingu.","Powstaje tylko to, bez czego wydarzenie si\u0119 nie obejdzie.","Obni\u017ca koszt",["6R Ograniczaj"],["Ograniczaj"]),
+
+  option(2,"lepiej","Agenda i materia\u0142y cyfrowe na stronie oraz przez kod QR.","Zmiana programu nie wymaga dodruku.","Obni\u017ca koszt",["6R Rezygnuj"],["Rezygnuj"]),
+
+  option(3,"najlepiej","Zero druku, materia\u0142y online dost\u0119pne tak\u017ce po wydarzeniu.","Tre\u015bci \u017cyj\u0105 d\u0142u\u017cej ni\u017c wydarzenie i nie trafiaj\u0105 do kosza.","Obni\u017ca koszt",["6R Rezygnuj","Ca\u0142y cykl \u017cycia"],["Rezygnuj"])]),
+
+ area("gadzety","Gad\u017cety","W trakcie","Najpierw pytamy, czy gad\u017cet jest potrzebny. Najlepszy odpad to ten, kt\u00f3ry nie powsta\u0142.",["Czy ta rzecz jest w og\u00f3le potrzebna?","Z czego jest zrobiona?","Czy da si\u0119 jej u\u017cy\u0107 ponownie?"],[
+
+  option(1,"minimum","U\u017cyteczne gad\u017cety bez daty i numeru edycji.","Bez daty da si\u0119 u\u017cy\u0107 rzeczy ponownie.","Zale\u017cy od oferty",["6R U\u017cywaj ponownie"],["U\u017cywaj ponownie"]),
+
+  option(2,"lepiej","Smycze i identyfikatory zbierane po wydarzeniu i u\u017cywane ponownie.","Zwrot wyposa\u017cenia obni\u017ca koszt kolejnych edycji.","Obni\u017ca koszt",["6R U\u017cywaj ponownie","Gospodarka cyrkularna"],["U\u017cywaj ponownie"]),
+
+  option(3,"najlepiej","Rezygnacja z gad\u017cet\u00f3w zgodnie z zasad\u0105 \"Rezygnuj\".","Nie trzeba produkowa\u0107, transportowa\u0107 ani utylizowa\u0107 niepotrzebnych rzeczy.","Obni\u017ca koszt",["6R Rezygnuj"],["Rezygnuj"])]),
+
+ area("miejsce-i-sala","Miejsce i sala","Przed","Dobre miejsce znosi przejazdy mi\u0119dzy punktami i przes\u0105dza o odpadach, energii i wodzie na ca\u0142ym wydarzeniu.",["Jak daleko jest najbli\u017cszy przystanek i czy doj\u015bcie jest wygodne?","Jak obiekt gospodaruje odpadami, energi\u0105 i wod\u0105?","Czy mo\u017cna skorzysta\u0107 z wyposa\u017cenia obiektu zamiast wynajmowa\u0107 osobno?"],[
+  option(1,"minimum","Sala w budynku dost\u0119pnym komunikacj\u0105 zbiorow\u0105, bez przejazd\u00f3w mi\u0119dzy punktami.","Jeden dobrze skomunikowany adres znosi potrzeb\u0119 dodatkowych przejazd\u00f3w w trakcie wydarzenia.","Bez dodatkowych koszt\u00f3w",["Transport niskoemisyjny","Lokalno\u015b\u0107"],["Przemy\u015bl"]),
+  option(2,"lepiej","Ca\u0142e wydarzenie w jednym budynku, sala dobrana do liczby os\u00f3b, wyposa\u017cenie z zasob\u00f3w uczelni.","Sala na miar\u0119 i sprz\u0119t, kt\u00f3ry ju\u017c jest, to mniej ogrzewania, mniej transportu i ni\u017cszy koszt.","Zale\u017cy od oferty",["Gospodarka cyrkularna","6R Ograniczaj"],["Ograniczaj"]),
+  option(3,"najlepiej","Obiekt wybrany wed\u0142ug kryteri\u00f3w: odpady, energia, woda, dost\u0119p bez samochodu i wielokrotne u\u017cycie wyposa\u017cenia.","Miejsce przes\u0105dza o wi\u0119kszo\u015bci \u015bladu wydarzenia, wi\u0119c warto wybiera\u0107 je tak starannie jak catering.","Zale\u017cy od oferty",["Kryteria dostawc\u00f3w","Ca\u0142y cykl \u017cycia"],["Przemy\u015bl","U\u017cywaj ponownie"])]),
+ area("energia-i-woda","Energia i woda","W trakcie","Zu\u017cycie pr\u0105du i wody rzadko kto\u015b liczy, a to jedyne dane, kt\u00f3re da si\u0119 odczyta\u0107 wprost z licznika.",["Czy da si\u0119 odczyta\u0107 zu\u017cycie energii w salach wydarzenia?","Czy jest dost\u0119p do wody z kranu lub dystrybutora?","Czy sprz\u0119t nag\u0142o\u015bnieniowy i AV mo\u017cna wypo\u017cyczy\u0107 zamiast kupowa\u0107?"],[
+  option(1,"minimum","Wy\u0142\u0105czanie sprz\u0119tu i \u015bwiat\u0142a w nieu\u017cywanych salach, zero wody w butelkach jednorazowych.","Najta\u0144sza oszcz\u0119dno\u015b\u0107 to ta, kt\u00f3rej nie trzeba kupowa\u0107: zgaszone \u015bwiat\u0142o i kran zamiast butelki.","Bez dodatkowych koszt\u00f3w",["6R Ograniczaj","6R Rezygnuj"],["Ograniczaj"]),
+  option(2,"lepiej","Dystrybutory wody i w\u0142asne kubki uczestnik\u00f3w, sprz\u0119t AV wypo\u017cyczony zamiast kupowanego.","Sprz\u0119t na kilka dni nie musi by\u0107 kupowany na w\u0142asno\u015b\u0107, a kubek wielorazowy zast\u0119puje setki butelek.","Zale\u017cy od oferty",["6R U\u017cywaj ponownie","Gospodarka cyrkularna"],["U\u017cywaj ponownie"]),
+  option(3,"najlepiej","Pomiar zu\u017cycia energii i wody w trakcie wydarzenia i zapisanie wyniku na kolejn\u0105 edycj\u0119.","Odczyt z licznika to twarda liczba, nie szacunek, i od razu pokazuje, gdzie szuka\u0107 oszcz\u0119dno\u015bci.","Wymaga czasu zespo\u0142u",["Ca\u0142y cykl \u017cycia"],["Przemy\u015bl","Recykling"])]),
+ area("komunikacja","Komunikacja i promocja","Przed","Promocja potrafi wyprodukowa\u0107 wi\u0119cej odpad\u00f3w ni\u017c samo wydarzenie, a jest w ca\u0142o\u015bci w r\u0119kach organizatora.",["Czy ten materia\u0142 musi powsta\u0107 w druku?","Czy oznakowanie da si\u0119 u\u017cy\u0107 ponownie na kolejnej edycji?","Gdzie materia\u0142y b\u0119d\u0105 przechowywane po wydarzeniu?"],[
+  option(1,"minimum","Zaproszenia i promocja wy\u0142\u0105cznie cyfrowe, bez druku i bez gad\u017cet\u00f3w promocyjnych.","Komunikat cyfrowy dociera dalej ni\u017c ulotka i nie zostawia po sobie niczego do wyrzucenia.","Obni\u017ca koszt",["6R Rezygnuj"],["Rezygnuj"]),
+  option(2,"lepiej","Komunikat o zasadach zr\u00f3wnowa\u017conych wys\u0142any uczestnikom przed wydarzeniem: dojazd, kubek, porcje.","Uczestnik, kt\u00f3ry zna zasady wcze\u015bniej, przyje\u017cd\u017ca poci\u0105giem i zabiera w\u0142asny kubek.","Obni\u017ca koszt",["Ca\u0142y cykl \u017cycia","Zach\u0119ty"],["Przemy\u015bl"]),
+  option(3,"najlepiej","Oznakowanie i roll-upy bez daty i numeru edycji, przechowywane do kolejnych wydarze\u0144.","Baner bez daty s\u0142u\u017cy latami, a magazyn kosztuje mniej ni\u017c druk za ka\u017cdym razem.","Obni\u017ca koszt",["6R U\u017cywaj ponownie","Gospodarka cyrkularna"],["U\u017cywaj ponownie"])]),
+ area("dostepnosc","Dost\u0119pno\u015b\u0107","W trakcie","Zr\u00f3wnowa\u017cone wydarzenie jest dost\u0119pne dla wszystkich: bariera na drodze do sali wyklucza tak samo jak brak dojazdu.",["Czy droga od przystanku do sali jest bez barier?","Czy materia\u0142y b\u0119d\u0105 dost\u0119pne cyfrowo po wydarzeniu?","Kto zapewnia t\u0142umaczenie lub napisy i na jakich warunkach?"],[
+  option(1,"minimum","Informacja o dost\u0119pno\u015bci miejsca i dojazdu podana w zaproszeniu.","Uczestnik musi wiedzie\u0107 przed wyjazdem, czy dotrze na miejsce bez przeszk\u00f3d.","Bez dodatkowych koszt\u00f3w",["Dost\u0119pno\u015b\u0107"],["Przemy\u015bl"]),
+  option(2,"lepiej","Wej\u015bcie bez barier, oznakowana droga od przystanku i miejsce na odpoczynek.","Oznakowana trasa i miejsce do odpoczynku sprawiaj\u0105, \u017ce transport zbiorowy jest realn\u0105 opcj\u0105 dla wszystkich.","Zale\u017cy od oferty",["Dost\u0119pno\u015b\u0107","Transport niskoemisyjny"],["Przemy\u015bl"]),
+  option(3,"najlepiej","T\u0142umaczenie lub napisy oraz materia\u0142y w wersji dost\u0119pnej cyfrowo po wydarzeniu.","Materia\u0142y dost\u0119pne po wydarzeniu \u017cyj\u0105 d\u0142u\u017cej ni\u017c sala i docieraj\u0105 do os\u00f3b, kt\u00f3re nie mog\u0142y przyjecha\u0107.","Wymaga bud\u017cetu",["Dost\u0119pno\u015b\u0107","Ca\u0142y cykl \u017cycia"],["Przemy\u015bl","Ograniczaj"])]),
+ area("ludzie","Ludzie / obs\u0142uga","W trakcie","Zr\u00f3wnowa\u017cenie obejmuje warunki pracy: jasne zadania, umow\u0119 o prac\u0119 i lokalno\u015b\u0107 obs\u0142ugi.",["Na jakiej umowie pracuje obs\u0142uga?","Czy obs\u0142uga jest lokalna?","Jak daleko obs\u0142uga doje\u017cd\u017ca do miejsca wydarzenia?"],[
+
+  option(1,"minimum","Jasny podzia\u0142 zada\u0144 i checklista dla ka\u017cdej osoby.","Odpowiedzialno\u015b\u0107 nie ginie mi\u0119dzy zespo\u0142ami.","Bez dodatkowych koszt\u00f3w",["Organizacja zespo\u0142u"],["Przemy\u015bl"]),
+
+  option(2,"lepiej","Dostawcy i obs\u0142uga zatrudnieni na umowie o prac\u0119.","Godna praca jest cz\u0119\u015bci\u0105 zr\u00f3wnowa\u017conego wydarzenia.","Zale\u017cy od oferty",["Umowa o prac\u0119"],["Przemy\u015bl"]),
+
+  option(3,"najlepiej","Lokalna obs\u0142uga na umowie o prac\u0119, z kr\u00f3tkim dojazdem.","Wspierasz region i ograniczasz dojazdy personelu.","Zale\u017cy od oferty",["Umowa o prac\u0119","Lokalno\u015b\u0107"],["Ograniczaj"])]),
+
+ area("po-wydarzeniu","Po wydarzeniu","Po","Cykl ko\u0144czy si\u0119 po powrocie uczestnik\u00f3w, pomiarze odpad\u00f3w i zapisaniu lekcji na kolejn\u0105 edycj\u0119.",["Jak zbierzemy ankiet\u0119 dojazdu?","Jak zwa\u017cymy odpady wed\u0142ug rodzaj\u00f3w?","Jakie dane z faktur s\u0105 potrzebne?"],[
+
+  option(1,"minimum","Segregacja odpad\u00f3w na miejscu.","Recykling jest ostatnim krokiem 6R i dotyczy tego, czego nie unikni\u0119to.","Bez dodatkowych koszt\u00f3w",["6R Recykling"],["Recykling"]),
+
+  option(2,"lepiej","Pomiar odpad\u00f3w i ankieta dojazdu uczestnik\u00f3w.","Dane pokazuj\u0105, czy wybory zadzia\u0142a\u0142y.","Wymaga czasu zespo\u0142u",["Ca\u0142y cykl \u017cycia"],["Recykling"]),
+
+  option(3,"najlepiej","Por\u00f3wnanie wp\u0142ywu przed i po oraz wnioski na nast\u0119pn\u0105 edycj\u0119.","Raport zamienia do\u015bwiadczenie w konkretne ulepszenia.","Wymaga czasu zespo\u0142u",["Ca\u0142y cykl \u017cycia"],["Recykling"])])
+
+]
+
+VENDOR_CRITERIA = [
+
+ {"name":"Pochodzenie i odleg\u0142o\u015b\u0107","jak_sprawdzic":"Zapytaj, sk\u0105d pochodz\u0105 produkty i ile kilometr\u00f3w jad\u0105.","sygnal_ostrzegawczy":"\"Lokalne\" bez podania miejsca pochodzenia."},
+
+ {"name":"Sezonowo\u015b\u0107","jak_sprawdzic":"Por\u00f3wnaj propozycj\u0119 z sezonem w regionie.","sygnal_ostrzegawczy":"Egzotyczne lub poza sezonem produkty w ofercie \"eko\"."},
+
+ {"name":"Opakowania i odpady","jak_sprawdzic":"Zapytaj o naczynia wielorazowe i odbi\u00f3r zwrotny.","sygnal_ostrzegawczy":"Jednorazowe \"ekologiczne\" bez systemu zagospodarowania."},
+
+ {"name":"Transport dostawy","jak_sprawdzic":"Zapytaj o flot\u0119 i \u0142\u0105czenie dostaw.","sygnal_ostrzegawczy":"Brak odpowiedzi lub wiele osobnych kurs\u00f3w."},
+
+ {"name":"Zatrudnienie na umow\u0119 o prac\u0119","jak_sprawdzic":"Zapytaj o form\u0119 zatrudnienia sta\u0142ego personelu.","sygnal_ostrzegawczy":"Brak umowy o prac\u0119 dla sta\u0142ego personelu."},
+
+ {"name":"Dowody zamiast hase\u0142","jak_sprawdzic":"Popro\u015b o certyfikaty lub dane mo\u017cliwe do weryfikacji.","sygnal_ostrzegawczy":"Og\u00f3lne \"eko\", \"zielony\" lub \"neutralny klimatycznie\" bez dowod\u00f3w."},
+
+ {"name":"Przejrzysto\u015b\u0107","jak_sprawdzic":"Sprawd\u017a, czy firma publikuje konkretne dane o wp\u0142ywie.","sygnal_ostrzegawczy":"Wy\u0142\u0105cznie marketing, brak liczb."},
+
+]
+
+AREA_QUESTIONS = [{"area_id":a["id"],"area_name":a["name"],"pytania_do_dostawcy":a["provider_questions"]} for a in EVENT_AREAS]
+
+ORGANIZER_CHECKLIST = [{"id":"o1","area":"Dojazd","area_id":"dojazd","label":"Sprawd\u017a po\u0142\u0105czenia kolejowe i autobusowe do U\u0141 oraz dopasuj godzin\u0119 rozpocz\u0119cia do poci\u0105g\u00f3w.","milestone":"T-60","min_level":1},{"id":"o2","area":"Dojazd","area_id":"dojazd","label":"Dodaj transport zbiorowy do zaproszenia i strony wydarzenia.","milestone":"T-30","min_level":1},{"id":"o3","area":"Dojazd","area_id":"dojazd","label":"Uruchom zapisy na wsp\u00f3lne przejazdy.","milestone":"T-30","min_level":2},{"id":"o4","area":"Zakwaterowanie","area_id":"zakwaterowanie","label":"Przygotuj list\u0119 nocleg\u00f3w w zasi\u0119gu spaceru lub komunikacji.","milestone":"T-60","min_level":1},{"id":"o5","area":"Catering","area_id":"catering","label":"Zam\u00f3w porcje wed\u0142ug rejestracji i ustal odbi\u00f3r nadwy\u017cek.","milestone":"T-30","min_level":1},{"id":"o6","area":"Materia\u0142y","area_id":"materialy","label":"Opublikuj agend\u0119 online z kodem QR zamiast druku.","milestone":"T-7","min_level":2},{"id":"o7","area":"Ludzie","area_id":"ludzie","label":"Wy\u015blij dostawcom pytania o kryteria, w tym o umow\u0119 o prac\u0119.","milestone":"T-30","min_level":2},{"id":"o8","area":"Po wydarzeniu","area_id":"po-wydarzeniu","label":"Zaplanuj wag\u0119 odpad\u00f3w i ankiet\u0119 dojazdu.","milestone":"T-0","min_level":1},{"id":"o9","area":"Gad\u017cety","area_id":"gadzety","label":"Sprawd\u017a, czy gad\u017cety s\u0105 w og\u00f3le potrzebne, zanim wy\u015blesz zapytanie do dostawcy.","milestone":"T-60","min_level":1},{"id":"o10","area":"Gad\u017cety","area_id":"gadzety","label":"Zam\u00f3w gad\u017cety bez daty i numeru edycji, \u017ceby pos\u0142u\u017cy\u0142y kolejny raz.","milestone":"T-30","min_level":1},{"id":"o11","area":"Gad\u017cety","area_id":"gadzety","label":"Ustaw punkt zwrotu smyczy i identyfikator\u00f3w przy wyj\u015bciu.","milestone":"T-0","min_level":2},{"id":"o12","area":"Gad\u017cety","area_id":"gadzety","label":"Potwierd\u017a rezygnacj\u0119 z gad\u017cet\u00f3w i wykre\u015bl je z bud\u017cetu wydarzenia.","milestone":"T-60","min_level":3},{"id":"o13","area":"Dojazd","area_id":"dojazd","label":"Uzgodnij zni\u017ck\u0119 za dojazd zbiorowy i autobus elektryczny z dworca.","milestone":"T-30","min_level":3},{"id":"o14","area":"Zakwaterowanie","area_id":"zakwaterowanie","label":"Zweryfikuj noclegi wed\u0142ug kryteri\u00f3w \u015brodowiskowych i spo\u0142ecznych.","milestone":"T-30","min_level":3},{"id":"o15","area":"Catering","area_id":"catering","label":"Potwierd\u017a brak jednorazowych sztu\u0107c\u00f3w i um\u00f3w odbi\u00f3r nadwy\u017cek jedzenia.","milestone":"T-7","min_level":3},{"id":"o16","area":"Materia\u0142y","area_id":"materialy","label":"Ogranicz druk do niezb\u0119dnego minimum i wybierz papier z recyklingu.","milestone":"T-30","min_level":1},{"id":"o17","area":"Ludzie","area_id":"ludzie","label":"Rozpisz zadania i checklist\u0119 dla ka\u017cdej osoby w zespole.","milestone":"T-60","min_level":1},{"id":"o18","area":"Po wydarzeniu","area_id":"po-wydarzeniu","label":"Zbierz ankiet\u0119 dojazdu i zwa\u017c odpady wed\u0142ug frakcji.","milestone":"T+7","min_level":2},{"id":"o19","area":"Po wydarzeniu","area_id":"po-wydarzeniu","label":"Por\u00f3wnaj wp\u0142yw przed i po oraz zapisz wnioski na nast\u0119pn\u0105 edycj\u0119.","milestone":"T+7","min_level":3},{"id":"o20","area":"Materia\u0142y","area_id":"materialy","label":"Udost\u0119pnij materia\u0142y online tak\u017ce po wydarzeniu, bez wersji drukowanej.","milestone":"T-7","min_level":3},{"id":"o21","area":"Ludzie","area_id":"ludzie","label":"Potwierd\u017a, \u017ce obs\u0142uga jest lokalna i doje\u017cd\u017ca bez samochodu.","milestone":"T-30","min_level":3},{"id":"o22","area":"Miejsce i sala","area_id":"miejsce-i-sala","label":"Wybierz sal\u0119 w budynku z dobrym dojazdem komunikacj\u0105 zbiorow\u0105.","milestone":"T-60","min_level":1},{"id":"o23","area":"Miejsce i sala","area_id":"miejsce-i-sala","label":"Potwierd\u017a, \u017ce ca\u0142e wydarzenie zmie\u015bci si\u0119 w jednym budynku, i ustal sprz\u0119t z zasob\u00f3w uczelni.","milestone":"T-30","min_level":2},{"id":"o24","area":"Miejsce i sala","area_id":"miejsce-i-sala","label":"Zweryfikuj obiekt wed\u0142ug kryteri\u00f3w: odpady, energia, woda i dost\u0119p bez samochodu.","milestone":"T-30","min_level":3},{"id":"o25","area":"Energia i woda","area_id":"energia-i-woda","label":"Ustal, kto gasi \u015bwiat\u0142o i wy\u0142\u0105cza sprz\u0119t w nieu\u017cywanych salach.","milestone":"T-7","min_level":1},{"id":"o26","area":"Energia i woda","area_id":"energia-i-woda","label":"Zam\u00f3w dystrybutory wody i przypomnij uczestnikom o w\u0142asnych kubkach.","milestone":"T-7","min_level":2},{"id":"o27","area":"Energia i woda","area_id":"energia-i-woda","label":"Spisz stan licznik\u00f3w energii i wody na pocz\u0105tku i na ko\u0144cu wydarzenia.","milestone":"T-0","min_level":3},{"id":"o28","area":"Komunikacja","area_id":"komunikacja","label":"Zaplanuj promocj\u0119 wy\u0142\u0105cznie w kana\u0142ach cyfrowych, bez druku.","milestone":"T-60","min_level":1},{"id":"o29","area":"Komunikacja","area_id":"komunikacja","label":"Wy\u015blij uczestnikom komunikat o zasadach: dojazd, w\u0142asny kubek, porcje wed\u0142ug rejestracji.","milestone":"T-30","min_level":2},{"id":"o30","area":"Komunikacja","area_id":"komunikacja","label":"Zam\u00f3w oznakowanie bez daty i numeru edycji oraz ustal miejsce jego przechowania.","milestone":"T-30","min_level":3},{"id":"o31","area":"Dost\u0119pno\u015b\u0107","area_id":"dostepnosc","label":"Opisz w zaproszeniu dost\u0119pno\u015b\u0107 miejsca i drog\u0119 od przystanku.","milestone":"T-60","min_level":1},{"id":"o32","area":"Dost\u0119pno\u015b\u0107","area_id":"dostepnosc","label":"Sprawd\u017a tras\u0119 od przystanku do sali pod k\u0105tem barier i oznakuj j\u0105.","milestone":"T-7","min_level":2},{"id":"o33","area":"Dost\u0119pno\u015b\u0107","area_id":"dostepnosc","label":"Zapewnij t\u0142umaczenie lub napisy i opublikuj materia\u0142y w wersji dost\u0119pnej cyfrowo.","milestone":"T-0","min_level":3}]
+
+TEAM_ROLES = [{"role":"Transport","contact":"[IMI\u0118 I NAZWISKO \u00b7 TELEFON / E-MAIL]","tasks":["Rozk\u0142ad poci\u0105g\u00f3w i godzina rozpocz\u0119cia","Wsp\u00f3lne przejazdy","Pytania do przewo\u017anika"],"task_areas":["dojazd","dojazd","dojazd"]},{"role":"Catering","contact":"[IMI\u0118 I NAZWISKO \u00b7 TELEFON / E-MAIL]","tasks":["Porcje zgodne z rejestracj\u0105","Menu lokalne i sezonowe","Odbi\u00f3r nadwy\u017cek jedzenia"],"task_areas":["catering","catering","catering"]},{"role":"Materia\u0142y i gad\u017cety","contact":"[IMI\u0118 I NAZWISKO \u00b7 TELEFON / E-MAIL]","tasks":["Agenda online i kod QR","Smycze bez daty edycji","Zbi\u00f3rka smyczy przy wyj\u015bciu"],"task_areas":["materialy","gadzety","gadzety"]},{"role":"Noclegi i obs\u0142uga","contact":"[IMI\u0118 I NAZWISKO \u00b7 TELEFON / E-MAIL]","tasks":["Lista nocleg\u00f3w w zasi\u0119gu spaceru","Dojazd do noclegu bez samochodu","Forma zatrudnienia obs\u0142ugi","Podzia\u0142 zada\u0144 w zespole"],"task_areas":["zakwaterowanie","zakwaterowanie","ludzie","ludzie"]},{"role":"Po wydarzeniu","contact":"[IMI\u0118 I NAZWISKO \u00b7 TELEFON / E-MAIL]","tasks":["Segregacja na miejscu","Wa\u017cenie odpad\u00f3w","Ankieta o doje\u017adzie"],"task_areas":["po-wydarzeniu","po-wydarzeniu","po-wydarzeniu"]},{"role":"Miejsce i infrastruktura","contact":"[IMI\u0118 I NAZWISKO \u00b7 TELEFON / E-MAIL]","tasks":["Wyb\u00f3r sali i dojazd do budynku","Sprz\u0119t z zasob\u00f3w obiektu","Odczyt licznik\u00f3w energii i wody"],"task_areas":["miejsce-i-sala","miejsce-i-sala","energia-i-woda"]},{"role":"Komunikacja i dost\u0119pno\u015b\u0107","contact":"[IMI\u0118 I NAZWISKO \u00b7 TELEFON / E-MAIL]","tasks":["Promocja wy\u0142\u0105cznie cyfrowa","Komunikat o zasadach dla uczestnik\u00f3w","Trasa bez barier od przystanku","Materia\u0142y dost\u0119pne cyfrowo"],"task_areas":["komunikacja","komunikacja","dostepnosc","dostepnosc"]}]
+
+CONTRACT_CLAUSES = [{"kind":"klauzula","text":"Dostawca przeka\u017ce raport masy odpad\u00f3w wed\u0142ug frakcji w ci\u0105gu 7 dni od wydarzenia."},{"kind":"klauzula","text":"Dostawca potwierdzi pochodzenie produkt\u00f3w, sezonowo\u015b\u0107 i udzia\u0142 naczynia wielorazowego na \u017c\u0105danie organizatora."},{"kind":"pytanie RFP","text":"Jakie mierzalne dane \u015brodowiskowe otrzymamy po realizacji us\u0142ugi?"},{"kind":"pytanie RFP","text":"Kt\u00f3re elementy oferty s\u0105 certyfikowane i kto wyda\u0142 certyfikat?"}]
+
+GREENWASHING_RISKS = [{"vendor_name":"Neutralna kategoria dostawcy","claim":"\"Lokalne\" bez miejsca pochodzenia","flag":"yellow","explanation":"Has\u0142o nie pozwala sprawdzi\u0107 odleg\u0142o\u015bci ani \u017ar\u00f3d\u0142a produktu.","follow_up":"Popro\u015b o adres gospodarstwa i tras\u0119 dostawy."},{"vendor_name":"Neutralna kategoria dostawcy","claim":"\"Neutralny klimatycznie\" bez danych","flag":"red","explanation":"Deklaracja mo\u017ce opiera\u0107 si\u0119 wy\u0142\u0105cznie na kompensacji.","follow_up":"Popro\u015b o dane emisji i niezale\u017cne potwierdzenie."},{"vendor_name":"Neutralna kategoria dostawcy","claim":"\"Zero odpad\u00f3w\" z raportem frakcji","flag":"green","explanation":"Dostawca pokazuje mas\u0119 frakcji i spos\u00f3b zagospodarowania.","follow_up":"Wpisz obowi\u0105zek raportu do umowy."}]
+
+ECO_SUMMARY = {"kg_co2e_min":220.0,"kg_co2e_max":480.0,"optimized_kg_co2e_min":120.0,"optimized_kg_co2e_max":270.0,"saved_pln":80.0,"emission_factor_sources":["Dane demonstracyjne transportu, cateringu i odpad\u00f3w","Ankieta dojazdu, waga odpad\u00f3w i faktury dostawc\u00f3w"]}
+
+def knowledge_base() -> dict[str, Any]:
+
+    return deepcopy({"six_r":SIX_R,"areas":EVENT_AREAS,"criteria":VENDOR_CRITERIA,"area_questions":AREA_QUESTIONS})
+
