@@ -58,3 +58,69 @@ Two filters run across everything: **locality** and **seasonality** — the furt
 ### Where the numbers come from
 
 The Polish knowledge base is written and maintained by the team, not generated. The AI model (Google Gemini) only *assembles* a guide out of that fixed knowledge base; it is never asked to invent a fact, and the prompts treat the organizer's event description as data rather than as instructions. Every figure — CO₂e, złoty amounts, and the squirrel and tree equivalents shown on the impact screen — is computed in Python in `backend/app/services/impact_service.py`. And the whole product runs with no AI at all, which is the default: see [Quick start](#quick-start).
+
+---
+
+## Quick start
+
+**You do not need an API key or any account.** `USE_MOCK_AI` defaults to `true`, so the entire product — the creator, the guide, the checklists, the impact estimate — runs deterministically out of the box.
+
+**Prerequisites:** Docker Engine with Compose V2. (Only for the non-Docker paths below: Python 3.12, matching `backend/Dockerfile`, and Node 20 or 22+ — the image pins Node 22 and Vite 6 is the real floor.)
+
+```bash
+cp .env.example .env
+docker compose up --build
+# open http://localhost:4540
+```
+
+That brings up three containers: the FastAPI backend, the built React SPA behind nginx, and Caddy in front of both, routing `/api/*`, `/docs*` and `/openapi.json` to the backend and everything else to the frontend. **Port 4540 is the only published port**, and it is bound to loopback by default — so there is no CORS to configure and nothing else is exposed.
+
+Swagger UI for the API: http://localhost:4540/docs
+
+## Configuration
+
+Everything lives in a single `.env` at the repo root, copied from `.env.example`. There is exactly one credential in the whole project, and it is optional.
+
+| Variable | Default | What it does | Where to get the value |
+|---|---|---|---|
+| `GEMINI_API_KEY` | *(empty)* | Google Gemini key. Empty means the app runs fully deterministically. | **Google AI Studio — https://aistudio.google.com/apikey.** Sign in with a Google account and create a key; the free tier is enough for the pilot. |
+| `GEMINI_MODEL_MAIN` | `gemini-3.8-flash` | Model used for the main structured generations (guide, analysis, area suggestions). | Your choice; leave as is unless you have a reason. |
+| `GEMINI_MODEL_LITE` | `gemini-3.5-flash-lite` | Cheaper model used only by the recommendation shim. | Your choice. |
+| `USE_MOCK_AI` | `true` | Master switch for live AI. `true` = no network calls, deterministic output. | Your choice. |
+| `EDGE_BIND_ADDR` | `127.0.0.1` | Which host interface Caddy's port 4540 is published on. | Your choice. Set `0.0.0.0` only to reach the stack from another machine during development. |
+| `VITE_API_BASE_URL` | `/api/v1` | Base URL the SPA calls. Read by Vite **at build time**. | Only matters when running the Vite dev server against a separately started backend — then set `http://localhost:8000/api/v1`. |
+
+Defaults are defined in `backend/app/core/config.py`, `docker-compose.yml` and `frontend/src/lib/api.ts`; `.env` is gitignored and never committed.
+
+### Turning the AI on
+
+Live Gemini requires **both** conditions — a key *and* mock mode explicitly disabled (`settings.gemini_enabled` in `backend/app/core/config.py`):
+
+```dotenv
+GEMINI_API_KEY=your-key-from-ai-studio
+USE_MOCK_AI=false
+```
+
+What this unlocks: `POST /events/{id}/suggest-areas` — proposing the relevant lifecycle areas from the organizer's free-text event description — is the single feature genuinely unavailable without it. Even then it never fails: the endpoint always answers `200`, returning `available: false` and a Polish sentence that the UI shows the organizer. Everything else in the product works identically with or without a key.
+
+## Running the parts separately
+
+Backend, **from the repo root**:
+
+```bash
+pip install -r backend/requirements.txt
+uvicorn backend.app.main:app --reload   # Swagger UI at http://localhost:8000/docs
+```
+
+Frontend, **from `frontend/`** — the Vite dev server runs on :5173, which is already in the backend's CORS allowlist:
+
+```bash
+cd frontend && npm install && npm run dev
+```
+
+Two things to know:
+
+- The uvicorn module path differs by context: `backend.app.main:app` from the repo root, `app.main:app` inside the Docker image (where `backend/` is the working directory).
+- **`npm run dev` does not type-check** — Vite only strips types. Type errors appear for the first time in `npm run build` (`tsc -b && vite build`). Run that before assuming a frontend change is good.
+
+There is no test suite, no linter and no formatter in this repo. The closest thing to a backend check is `python -m compileall backend/app`.
