@@ -4,6 +4,7 @@ Content selection lives in checklist_builder, numbers in impact_service and
 model context in ai_context. Keep this module free of either.
 """
 from __future__ import annotations
+import logging
 from copy import deepcopy
 from typing import Any
 from ..mocks.knowledge_mocks import CONTRACT_CLAUSES, GREENWASHING_RISKS
@@ -15,24 +16,32 @@ from .ai_context import build_eguide_prompt
 from .checklist_builder import build_organizer_checklist, build_team_checklists
 from .impact_service import build_impact
 
+logger = logging.getLogger(__name__)
+
 
 def compile_eguide(event: dict[str, Any]) -> EGuideResponse:
     """Compile organizer and team checklists without recommending companies."""
     impact = EmissionsSummary(**build_impact(event))
     if settings.gemini_enabled:
-        generated = generate_structured(
-            task="generate_eguide",
-            prompt=build_eguide_prompt(event),
-            schema=EGuideResponse,
-            system_instruction="Compile the guide in Polish and preserve the deterministic impact_summary supplied by Python.",
-            prompt_version="v1",
-        )
-        generated.impact_summary = impact
-        generated.emissions_summary = impact
-        event["eguide"] = generated.model_dump()
-        event["status"] = EventStatus.GUIDE_READY
-        save_event(event)
-        return generated
+        try:
+            generated = generate_structured(
+                task="generate_eguide",
+                prompt=build_eguide_prompt(event),
+                schema=EGuideResponse,
+                system_instruction="Compile the guide in Polish and preserve the deterministic impact_summary supplied by Python.",
+                prompt_version="v1",
+            )
+        except Exception:
+            # A model that drifts from the knowledge base must never reach the
+            # organizer. Fall through to the deterministic guide instead.
+            logger.warning("Gemini guide generation rejected, using the deterministic guide", exc_info=True)
+        else:
+            generated.impact_summary = impact
+            generated.emissions_summary = impact
+            event["eguide"] = generated.model_dump()
+            event["status"] = EventStatus.GUIDE_READY
+            save_event(event)
+            return generated
 
     organizer = build_organizer_checklist(event)
     guide = EGuideResponse(
