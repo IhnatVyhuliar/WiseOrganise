@@ -9,13 +9,13 @@ import { GuidePage } from './components/checklists/GuidePage';
 import { ImpactPage } from './components/impact/ImpactPage';
 import { api, normalizeReference, type ChecklistDonePayload, type EventRecord, type ReferenceData } from './lib/api';
 import type { AreaId, ImpactSummary } from './types';
-import { eventAreas as fallbackAreas, vendorCriteria as fallbackCriteria, sixRHierarchy as fallbackRules, organizerChecklist as fallbackChecklist, teamRoles as fallbackRoles, defaultPilot } from './data/knowledgeBase';
+import { eventAreas as fallbackAreas, areaCriteria as fallbackAreaCriteria, vendorCriteria as fallbackCriteria, sixRHierarchy as fallbackRules, organizerChecklist as fallbackChecklist, teamRoles as fallbackRoles, defaultPilot } from './data/knowledgeBase';
 import { contractClauses as fallbackClauses, greenwashingRisks as fallbackRisks, ecoSummary as fallbackEcoSummary } from './data/knowledgeExtras';
 import './styles/global.css';
 
 function App() {
   const [view, setView] = useState<View>('start');
-  const [reference, setReference] = useState<ReferenceData>({ six_r: fallbackRules, areas: fallbackAreas, criteria: fallbackCriteria, area_questions: fallbackAreas.map((area) => ({ areaId: area.id, areaName: area.name, providerQuestions: area.providerQuestions })), organizer_checklist: fallbackChecklist, team_roles: fallbackRoles, contract_clauses: fallbackClauses, greenwashing_risks: fallbackRisks, eco_summary: fallbackEcoSummary, default_pilot: defaultPilot, source_ids: [] });
+  const [reference, setReference] = useState<ReferenceData>({ six_r: fallbackRules, areas: fallbackAreas, criteria: fallbackCriteria, area_questions: fallbackAreas.map((area) => ({ areaId: area.id, areaName: area.name, providerQuestions: area.providerQuestions })), area_criteria: fallbackAreaCriteria, organizer_checklist: fallbackChecklist, team_roles: fallbackRoles, contract_clauses: fallbackClauses, greenwashing_risks: fallbackRisks, eco_summary: fallbackEcoSummary, default_pilot: defaultPilot, source_ids: [] });
   const [event, setEvent] = useState<EventRecord | null>(null);
   const [eguide, setEguide] = useState<any>(null);
   const [neededAreas, setNeededAreas] = useState<AreaId[] | null>(null);
