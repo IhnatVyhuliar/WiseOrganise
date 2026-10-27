@@ -1,3 +1,12 @@
+# Chain: NAS edge (public TLS) -> mainserv nginx (LAN, plain HTTP) -> here.
+# Trusting the private-range hop keeps the X-Forwarded-Proto: https and the real
+# client IP those proxies set, instead of rewriting them from this connection.
+{
+  servers {
+    trusted_proxies static private_ranges
+  }
+}
+
 :4540 {
   encode gzip zstd
   log {
