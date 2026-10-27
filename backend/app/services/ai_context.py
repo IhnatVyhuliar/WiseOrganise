@@ -121,6 +121,24 @@ def build_eguide_prompt(event: dict[str, Any]) -> GroundedPrompt:
     )
 
 
+def build_area_suggestion_prompt(event: dict[str, Any]) -> GroundedPrompt:
+    """Context for proposing lifecycle areas from the organizer's description.
+
+    The model picks from the supplied areas; it never names a new one. The ids
+    travel on the prompt so the caller can reject anything outside the base.
+    """
+    available = [
+        {"id": area["id"], "name": area["name"], "stage": area["stage"], "lead": area["lead"]}
+        for area in EVENT_AREAS
+    ]
+    allowed_ids = [area["id"] for area in available]
+    knowledge = _knowledge_block({"AVAILABLE_AREAS": available, "ALLOWED_AREA_IDS": allowed_ids})
+    return GroundedPrompt(
+        f"{prompt_text('suggest_areas.md')}\n{knowledge}\n{_event_block(event)}",
+        allowed_ids,
+    )
+
+
 def build_vendor_prompt(event: dict[str, Any]) -> GroundedPrompt:
     """Context for neutral supplier-category criteria."""
     knowledge = _knowledge_block(

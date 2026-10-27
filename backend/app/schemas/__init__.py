@@ -61,7 +61,8 @@ from .enums import (  # noqa: E402
 )
 from .event import EventCreate, EventPatch, EventResponse, EventUpdate, NeededAreasUpdate, PilotContext  # noqa: E402
 from .options import AreaOptionsResponse, EventArea, OptionLevel, OptionSelection, OptionSelectionPayload, OptionSelectionResponse  # noqa: E402
-from .criteria import AreaVerification, CriteriaResponse, VendorCriterion  # noqa: E402
+from .criteria import AreaCriteria, AreaCriterion, AreaVerification, CriteriaResponse, VendorCriterion  # noqa: E402
+from .suggestions import AreaSuggestion, AreaSuggestionResponse  # noqa: E402
 from .recommendation import (  # noqa: E402
     CategoryRecommendationsResponse,
     RecommendationList,

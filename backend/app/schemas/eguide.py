@@ -110,6 +110,8 @@ class RiskFlag(APIModel):
 
     claim: str
 
+    area_ids: list[AreaId] = Field(default_factory=list, serialization_alias="areaIds")
+
     flag: FlagColor
 
     explanation: str

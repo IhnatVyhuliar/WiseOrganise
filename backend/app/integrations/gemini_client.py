@@ -69,6 +69,39 @@ def check_coverage(result: BaseModel, allowed_ids: Iterable[str] | None) -> None
         raise ValueError(f"Model returned ids outside the supplied knowledge base: {', '.join(invented)}")
 
 
+def response_schema(schema: type[BaseModel]) -> dict[str, Any]:
+    """Convert a Pydantic model into a schema the Gemini REST API accepts.
+
+    Every schema here inherits ``APIModel``, which sets ``extra="forbid"``, so
+    Pydantic emits ``additionalProperties``. The API rejects that field outright
+    (``Unknown name "additional_properties"``), and it rejects ``$ref`` too, so
+    references are inlined and the unsupported keywords are dropped.
+    """
+
+    data = schema.model_json_schema(by_alias=True)
+    defs = data.pop("$defs", {})
+
+    def resolve(node: Any, seen: tuple[str, ...] = ()) -> Any:
+        if isinstance(node, list):
+            return [resolve(item, seen) for item in node]
+        if not isinstance(node, dict):
+            return node
+        ref = node.get("$ref")
+        if isinstance(ref, str) and ref.startswith("#/$defs/"):
+            name = ref.split("/")[-1]
+            if name in seen:  # self-referential schema: stop before recursing
+                return {"type": "object"}
+            merged = {**defs.get(name, {}), **{k: v for k, v in node.items() if k != "$ref"}}
+            return resolve(merged, seen + (name,))
+        return {
+            key: resolve(value, seen)
+            for key, value in node.items()
+            if key not in ("additionalProperties", "$defs")
+        }
+
+    return resolve(data)
+
+
 def generate_structured(
     *,
     task: str,
@@ -102,7 +135,7 @@ def generate_structured(
             config=types.GenerateContentConfig(
                 system_instruction=f"{_SAFETY_INSTRUCTION}\n{system_instruction}",
                 response_mime_type="application/json",
-                response_schema=schema,
+                response_schema=response_schema(schema),
             ),
         )
         text = getattr(response, "text", None)

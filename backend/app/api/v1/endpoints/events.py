@@ -18,8 +18,10 @@ from ....schemas import (
     VendorRecommendation,
     AreaOptionsResponse, OptionSelectionPayload, OptionSelectionResponse, CriteriaResponse,
     ChecklistDoneUpdate, NeededAreasUpdate,
+    AreaSuggestionResponse,
 )
 from ....services.eguide_service import compile_eguide, get_eguide
+from ....services.suggestion_service import suggest_areas
 from ....services.event_service import (
     analyze_event,
     checklist_response,
@@ -171,6 +173,17 @@ def generate_eguide_endpoint(event_id: str) -> EGuideResponse:
         return compile_eguide(get_event_or_404(event_id))
     except LookupError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post("/{event_id}/suggest-areas", response_model=AreaSuggestionResponse)
+def suggest_areas_endpoint(event_id: str) -> AreaSuggestionResponse:
+    """Propose lifecycle areas from the organizer's own description.
+
+    Always 200: an unavailable model is reported in the body so the creator can
+    explain itself instead of leaving the organizer with a dead button.
+    """
+
+    return suggest_areas(get_event_or_404(event_id))
 
 
 @router.patch("/{event_id}/needed-areas", response_model=EventResponse)
