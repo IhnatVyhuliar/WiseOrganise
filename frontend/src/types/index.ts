@@ -8,8 +8,8 @@ export interface OptionLevel { level: 1 | 2 | 3; label: 'minimum' | 'lepiej' | '
 export interface EventArea { id: string; name: string; stage: LifecycleStage; lead: string; levels: OptionLevel[]; providerQuestions: string[]; note?: string; }
 export interface VendorCriterion { name: string; howToVerify: string; warning: string; }
 export interface AreaQuestions { areaId: string; areaName: string; providerQuestions: string[]; }
-export interface ChecklistItem { id: string; area: string; areaId?: AreaId | null; label: string; milestone?: Milestone | null; isDone?: boolean; }
-export interface TeamRole { role: string; contact: string; tasks: string[]; completedTasks?: string[]; }
+export interface ChecklistItem { id: string; area: string; areaId?: AreaId | null; label: string; milestone?: Milestone | null; minLevel?: number; isDone?: boolean; }
+export interface TeamRole { role: string; contact: string; tasks: string[]; taskAreas?: AreaId[]; completedTasks?: string[]; }
 export interface ContractClause { kind: string; text: string; }
 export interface GreenwashingRisk { vendorName: string; claim: string; flag: FlagColor; explanation: string; followUp: string; }
 export interface EcoSummary { kgCo2eMin: number; kgCo2eMax: number; optimizedKgCo2eMin: number; optimizedKgCo2eMax: number; savedPln: number; emissionFactorSources: string[]; }

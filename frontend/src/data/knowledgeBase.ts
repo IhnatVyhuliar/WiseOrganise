@@ -55,19 +55,33 @@ export const vendorCriteria: VendorCriterion[] = [
  {name:'Przejrzystość',howToVerify:'Sprawdź, czy firma publikuje konkretne dane o wpływie.',warning:'Wyłącznie marketing, brak liczb.'}
 ];
 export const organizerChecklist: ChecklistItem[] = [
- {id:'o1',area:'Dojazd',areaId:'dojazd',label:'Sprawdź połączenia kolejowe i autobusowe do UŁ oraz dopasuj godzinę rozpoczęcia do pociągów.',milestone:'T-60'},
- {id:'o2',area:'Dojazd',areaId:'dojazd',label:'Dodaj transport zbiorowy do zaproszenia i strony wydarzenia.',milestone:'T-30'},
- {id:'o3',area:'Dojazd',areaId:'dojazd',label:'Uruchom zapisy na wspólne przejazdy.',milestone:'T-30'},
- {id:'o4',area:'Zakwaterowanie',areaId:'zakwaterowanie',label:'Przygotuj listę noclegów w zasięgu spaceru lub komunikacji.',milestone:'T-60'},
- {id:'o5',area:'Catering',areaId:'catering',label:'Zamów porcje według rejestracji i ustal odbiór nadwyżek.',milestone:'T-30'},
- {id:'o6',area:'Materiały',areaId:'materialy',label:'Opublikuj agendę online z kodem QR zamiast druku.',milestone:'T-7'},
- {id:'o7',area:'Ludzie',areaId:'ludzie',label:'Wyślij dostawcom pytania o kryteria, w tym o umowę o pracę.',milestone:'T-30'},
- {id:'o8',area:'Po wydarzeniu',areaId:'po-wydarzeniu',label:'Zaplanuj wagę odpadów i ankietę dojazdu.',milestone:'T-0'}
+ {id:'o1',area:'Dojazd',areaId:'dojazd',label:'Sprawdź połączenia kolejowe i autobusowe do UŁ oraz dopasuj godzinę rozpoczęcia do pociągów.',milestone:'T-60',minLevel:1},
+ {id:'o2',area:'Dojazd',areaId:'dojazd',label:'Dodaj transport zbiorowy do zaproszenia i strony wydarzenia.',milestone:'T-30',minLevel:1},
+ {id:'o3',area:'Dojazd',areaId:'dojazd',label:'Uruchom zapisy na wspólne przejazdy.',milestone:'T-30',minLevel:2},
+ {id:'o4',area:'Zakwaterowanie',areaId:'zakwaterowanie',label:'Przygotuj listę noclegów w zasięgu spaceru lub komunikacji.',milestone:'T-60',minLevel:1},
+ {id:'o5',area:'Catering',areaId:'catering',label:'Zamów porcje według rejestracji i ustal odbiór nadwyżek.',milestone:'T-30',minLevel:1},
+ {id:'o6',area:'Materiały',areaId:'materialy',label:'Opublikuj agendę online z kodem QR zamiast druku.',milestone:'T-7',minLevel:2},
+ {id:'o7',area:'Ludzie',areaId:'ludzie',label:'Wyślij dostawcom pytania o kryteria, w tym o umowę o pracę.',milestone:'T-30',minLevel:2},
+ {id:'o8',area:'Po wydarzeniu',areaId:'po-wydarzeniu',label:'Zaplanuj wagę odpadów i ankietę dojazdu.',milestone:'T-0',minLevel:1},
+ {id:'o9',area:'Gadżety',areaId:'gadzety',label:'Sprawdź, czy gadżety są w ogóle potrzebne, zanim wyślesz zapytanie do dostawcy.',milestone:'T-60',minLevel:1},
+ {id:'o10',area:'Gadżety',areaId:'gadzety',label:'Zamów gadżety bez daty i numeru edycji, żeby posłużyły kolejny raz.',milestone:'T-30',minLevel:1},
+ {id:'o11',area:'Gadżety',areaId:'gadzety',label:'Ustaw punkt zwrotu smyczy i identyfikatorów przy wyjściu.',milestone:'T-0',minLevel:2},
+ {id:'o12',area:'Gadżety',areaId:'gadzety',label:'Potwierdź rezygnację z gadżetów i wykreśl je z budżetu wydarzenia.',milestone:'T-60',minLevel:3},
+ {id:'o13',area:'Dojazd',areaId:'dojazd',label:'Uzgodnij zniżkę za dojazd zbiorowy i autobus elektryczny z dworca.',milestone:'T-30',minLevel:3},
+ {id:'o14',area:'Zakwaterowanie',areaId:'zakwaterowanie',label:'Zweryfikuj noclegi według kryteriów środowiskowych i społecznych.',milestone:'T-30',minLevel:3},
+ {id:'o15',area:'Catering',areaId:'catering',label:'Potwierdź brak jednorazowych sztućców i umów odbiór nadwyżek jedzenia.',milestone:'T-7',minLevel:3},
+ {id:'o16',area:'Materiały',areaId:'materialy',label:'Ogranicz druk do niezbędnego minimum i wybierz papier z recyklingu.',milestone:'T-30',minLevel:1},
+ {id:'o17',area:'Ludzie',areaId:'ludzie',label:'Rozpisz zadania i checklistę dla każdej osoby w zespole.',milestone:'T-60',minLevel:1},
+ {id:'o18',area:'Po wydarzeniu',areaId:'po-wydarzeniu',label:'Zbierz ankietę dojazdu i zważ odpady według frakcji.',milestone:'T+7',minLevel:2},
+ {id:'o19',area:'Po wydarzeniu',areaId:'po-wydarzeniu',label:'Porównaj wpływ przed i po oraz zapisz wnioski na następną edycję.',milestone:'T+7',minLevel:3},
+ {id:'o20',area:'Materiały',areaId:'materialy',label:'Udostępnij materiały online także po wydarzeniu, bez wersji drukowanej.',milestone:'T-7',minLevel:3},
+ {id:'o21',area:'Ludzie',areaId:'ludzie',label:'Potwierdź, że obsługa jest lokalna i dojeżdża bez samochodu.',milestone:'T-30',minLevel:3}
 ];
 export const teamRoles: TeamRole[] = [
- {role:'Transport',contact:'[IMIĘ I NAZWISKO · TELEFON / E-MAIL]',tasks:['Rozkład pociągów i godzina rozpoczęcia','Wspólne przejazdy','Pytania do przewoźnika']},
- {role:'Catering',contact:'[IMIĘ I NAZWISKO · TELEFON / E-MAIL]',tasks:['Porcje zgodne z rejestracją','Menu lokalne i sezonowe','Odbiór nadwyżek jedzenia']},
- {role:'Materiały i gadżety',contact:'[IMIĘ I NAZWISKO · TELEFON / E-MAIL]',tasks:['Agenda online i kod QR','Smycze bez daty edycji','Zbiórka smyczy przy wyjściu']},
- {role:'Po wydarzeniu',contact:'[IMIĘ I NAZWISKO · TELEFON / E-MAIL]',tasks:['Segregacja na miejscu','Ważenie odpadów','Ankieta o dojeździe']}
+ {role:'Transport',contact:'[IMIĘ I NAZWISKO · TELEFON / E-MAIL]',tasks:['Rozkład pociągów i godzina rozpoczęcia','Wspólne przejazdy','Pytania do przewoźnika'],taskAreas:['dojazd','dojazd','dojazd']},
+ {role:'Catering',contact:'[IMIĘ I NAZWISKO · TELEFON / E-MAIL]',tasks:['Porcje zgodne z rejestracją','Menu lokalne i sezonowe','Odbiór nadwyżek jedzenia'],taskAreas:['catering','catering','catering']},
+ {role:'Materiały i gadżety',contact:'[IMIĘ I NAZWISKO · TELEFON / E-MAIL]',tasks:['Agenda online i kod QR','Smycze bez daty edycji','Zbiórka smyczy przy wyjściu'],taskAreas:['materialy','gadzety','gadzety']},
+ {role:'Noclegi i obsługa',contact:'[IMIĘ I NAZWISKO · TELEFON / E-MAIL]',tasks:['Lista noclegów w zasięgu spaceru','Dojazd do noclegu bez samochodu','Forma zatrudnienia obsługi','Podział zadań w zespole'],taskAreas:['zakwaterowanie','zakwaterowanie','ludzie','ludzie']},
+ {role:'Po wydarzeniu',contact:'[IMIĘ I NAZWISKO · TELEFON / E-MAIL]',tasks:['Segregacja na miejscu','Ważenie odpadów','Ankieta o dojeździe'],taskAreas:['po-wydarzeniu','po-wydarzeniu','po-wydarzeniu']}
 ];
 export const defaultPilot: PilotConfig = {city:'Uniwersytet Łódzki, Łódź',radiusKm:20,eventStart:'09:30',prioritizeRail:true,prioritizeElectricBuses:true};
