@@ -49,6 +49,9 @@ export interface ChecklistDonePayload { itemId: string; isDone: boolean; role?: 
 /** POST /events/{id}/suggest-areas. Always 200: `message` says why there are none. */
 export interface AreaSuggestionResponse { available: boolean; message: string; suggestions: AreaSuggestion[]; }
 
+// The /criteria and /recommendations routes stay on the backend as a neutral
+// category compatibility shim, but they have no client: criteria come from
+// /reference-data, and no screen may ever rank a vendor.
 export const api = {
   reference: () => request<ReferenceData>('/reference-data'),
   createEvent: (payload: Record<string, unknown>) => request<EventRecord>('/events', { method: 'POST', body: JSON.stringify(payload) }),
@@ -60,10 +63,6 @@ export const api = {
   updateChecklist: (id: string, payload: unknown) => request<unknown>(`/events/${id}/checklist`, { method: 'PATCH', body: JSON.stringify(payload) }),
   options: (id: string) => request<{ areas: EventArea[]; selectedOptions: Record<string, number> }>(`/events/${id}/options`),
   updateOptions: (id: string, selections: unknown[]) => request<unknown>(`/events/${id}/options`, { method: 'PATCH', body: JSON.stringify({ selections }) }),
-  criteria: () => request<unknown>('/events/criteria'),
-  recommend: (id: string) => request<unknown>(`/events/${id}/recommend`, { method: 'POST' }),
-  recommendations: (id: string) => request<unknown>(`/events/${id}/recommendations`),
-  selectRecommendation: (id: string, recId: string) => request<unknown>(`/events/${id}/recommendations/${recId}/select`, { method: 'POST' }),
   /** Returns the whole compiled guide, so no follow-up GET is needed. */
   generateEguide: (id: string) => request<any>(`/events/${id}/eguide`, { method: 'POST' }),
   eguide: (id: string) => request<unknown>(`/events/${id}/eguide`),

@@ -10,7 +10,7 @@ This is a React + TypeScript + Vite refactor of `frontend/WiseOrganise — aplik
 - `src/main.tsx`, `src/App.tsx`: React bootstrap and view-level navigation state.
 - `src/types/index.ts`: `EventArea`, `OptionLevel`, `VendorCriterion`, checklist, team, and UŁ pilot interfaces, plus the API-facing `AreaQuestions`, `ContractClause`, `GreenwashingRisk`, `EcoSummary`, `EcoMotivator`, and `ImpactSummary` contracts.
 - `src/lib/api.ts`: the single HTTP client for the FastAPI backend, plus `normalizeReference`, which reconciles the backend's snake_case and camelCase reference keys into one shape.
-- `src/data/knowledgeBase.ts`: the fixed 6R hierarchy, seven lifecycle areas and their three levels, provider verification criteria, organizer/team checklists, and parameterized UŁ pilot defaults.
+- `src/data/knowledgeBase.ts`: the fixed 6R hierarchy, eleven lifecycle areas and their three levels, the universal provider verification criteria, the per-area `areaCriteria` layer, organizer/team checklists, and parameterized UŁ pilot defaults.
 - `src/data/knowledgeExtras.ts`: offline fallback copies of `CONTRACT_CLAUSES`, `GREENWASHING_RISKS`, and `ECO_SUMMARY`, kept word for word in sync with `backend/app/mocks/knowledge_mocks.py`.
 - `src/components/layout/Layout.tsx`: `Header`, `PageShell`, and `Stepper`.
 - `src/components/creator/CreatorPage.tsx`: event basics, lifecycle area navigation, expandable three-level cards, educational explanations, cost effects, provider questions, and selection state.
@@ -103,6 +103,34 @@ The PDF is authoritative whenever the saved HTML and summary differ. Page refere
 - **Mentor requirement:** Pages 1–2 and 6–7 say principles, areas, options, and criteria must be a fixed team-maintained base; Gemini may only assemble a personalized guide and must not invent facts. Each decision needs a short educational explanation.
 - **Action:** The knowledge base is imported directly by the creator, criteria, rules, and guide. Every option carries `why`; the guide copy states that AI assembles choices without adding facts.
 - **Code:** `src/data/knowledgeBase.ts`, `CreatorPage.tsx` (level `why` rendering), and `GuidePage.tsx` (intro copy).
+
+### DEC-10: Eleven areas, and supplier knowledge inside the area
+
+- **Previous state:** seven lifecycle areas; supplier criteria were one global list of seven shown only on the criteria page, and the creator rendered an area's provider questions as a bare list.
+- **Decision:** the product owner asked for more areas, more closely fitted to the event. `AreaId` gains `miejsce-i-sala`, `energia-i-woda`, `komunikacja`, and `dostepnosc`. This deliberately overrides the PDF's seven; three levels per area and the fixed 6R order are unchanged.
+- **Action:** `vendorCriteria` is untouched and the criteria page still shows it in full. A new `areaCriteria` export mirrors the backend's `AREA_CRITERIA` — detailed criteria written per area, each naming the evidence to ask for — and `AreaKnowledge` renders an area's questions, criteria and greenwashing warnings under its levels.
+- **Code:** `src/types/index.ts` (`AreaId`, `AreaCriterion`), `src/data/knowledgeBase.ts` (`areaCriteria` and the attach loop), `src/components/creator/AreaKnowledge.tsx`.
+
+### DEC-11: Nothing the organizer needs is collapsed by default
+
+- **Previous state:** `CreatorPage` kept an `expanded` map seeded `{'dojazd-1': true}`, so the educational "why", the cost effect, the tags and the *Wybierz ten poziom* button were hidden until the card was clicked — and reset to closed on every area change.
+- **Decision:** the organizer should not have to click to discover what a level means or what to ask a supplier.
+- **Action:** the expansion state is gone; all three levels render open, and the per-area supplier knowledge below them is never collapsed either.
+- **Code:** `src/components/creator/CreatorPage.tsx`, `src/components/creator/AreaKnowledge.tsx`, `src/styles/knowledge.css`.
+
+### DEC-12: The description is a creator field, and AI may propose areas from it
+
+- **Previous state:** `rawDescription` existed in the TS contract and on `EventCreate`, but no input collected it; `App.tsx` sent a hardcoded sentence.
+- **Decision:** collect it in the basics step and let Gemini propose which areas the event needs. Suggestions pre-tick toggles and show a Polish reason; they never lock the organizer's choice.
+- **Action:** `NeedsStep` gained the suggest button. Because the step is Gemini-only and `USE_MOCK_AI=true` is the default, an unavailable model renders the backend's own Polish sentence instead of doing nothing.
+- **Code:** `src/components/creator/CreatorPage.tsx` (basics form), `src/components/creator/NeedsStep.tsx`, `api.suggestAreas` in `src/lib/api.ts`.
+
+### DEC-13: The guide button works from anywhere, and failures are visible
+
+- **Previous state:** `onGenerate` was `async () => { if (event) { ... } }`. Reached from the header navigation without visiting the creator, `event` was `null` and the click did nothing — no error, no spinner — and `GuidePage` falls back to the static checklist, so the page looked the same either way. No call in the chain had a `try/catch`, and `.api-error` was referenced in `App.tsx` but defined in no stylesheet.
+- **Decision:** one shared path for both entry points, creating the event first; every failure reaches the screen.
+- **Action:** `runGuide` calls `ensureEvent` first, sets a `busy` flag, and routes errors into the visible `.api-error` banner, which now has styles. The redundant `GET` after the `POST` is gone. `GuidePage` says plainly when it is still showing the general base. The basics step sends only changed fields, because PATCHing location, date or attendees wipes every level choice.
+- **Code:** `src/App.tsx` (`runGuide`, `guard`), `src/components/checklists/GuidePage.tsx`, `src/styles/global.css`, `src/components/creator/CreatorPage.tsx` (`saveBasics`).
 
 ## Open questions from PDF page 9 and current handling
 
