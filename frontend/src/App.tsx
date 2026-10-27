@@ -21,19 +21,34 @@ function App() {
   const [neededAreas, setNeededAreas] = useState<AreaId[] | null>(null);
   const [impact, setImpact] = useState<ImpactSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  /** Surface a failed call instead of letting the rejection vanish. */
+  const guard = async (run: () => Promise<void>, fallback: string) => { setError(''); try { await run(); } catch (err) { setError(err instanceof Error ? err.message : fallback); } };
   useEffect(() => { (async () => { try { setReference(normalizeReference(await api.reference())); } catch (err) { setError(err instanceof Error ? err.message : 'Nie udało się pobrać bazy wiedzy.'); } finally { setLoading(false); } })(); }, []);
   const ensureEvent = async (payload: Record<string, unknown> = {}) => { if (event) return event; const created = await api.createEvent({ title: 'Wydarzenie na UŁ', eventType: 'Konferencja', rawDescription: 'Zrównoważone wydarzenie w pilotażu UŁ.', attendees: 120, location: reference.default_pilot.city, eventDate: '2026-11-20', participantOrigins: 'Łódź i okolice', pilot: reference.default_pilot, ...payload }); setEvent(created); return created; };
   const saveEvent = async (payload: Record<string, unknown>) => { const current = await ensureEvent(payload); const next = await api.updateEvent(current.id, payload); setEvent(next); return next; };
-  const onNeededAreas = async (areas: AreaId[]) => { const current = await ensureEvent(); const next = await api.setNeededAreas(current.id, areas); setEvent(next); setNeededAreas(next.neededAreas ?? areas); };
-  const onToggleDone = async (payload: ChecklistDonePayload) => { const current = await ensureEvent(); setEguide(await api.setChecklistDone(current.id, payload)); };
+  const onNeededAreas = (areas: AreaId[]) => guard(async () => { const current = await ensureEvent(); const next = await api.setNeededAreas(current.id, areas); setEvent(next); setNeededAreas(next.neededAreas ?? areas); }, 'Nie udało się zapisać wybranych obszarów.');
+  const onToggleDone = (payload: ChecklistDonePayload) => guard(async () => { const current = await ensureEvent(); setEguide(await api.setChecklistDone(current.id, payload)); }, 'Nie udało się zapisać zaznaczenia.');
+  // One path for both entry points. ensureEvent comes first so the guide button
+  // also works when the organizer opened the guide from the header navigation
+  // without ever walking through the creator.
+  const runGuide = (navigate = false) => guard(async () => {
+    setBusy(true);
+    try {
+      const current = await ensureEvent();
+      setEguide(await api.generateEguide(current.id));
+      setImpact(await api.impact(current.id));
+      if (navigate) setView('guide');
+    } finally { setBusy(false); }
+  }, 'Nie udało się wygenerować poradnika.');
   let page: ReactNode;
   if (loading) page = <main className="page"><div className="loading-state">Ładuję bazę wiedzy.</div></main>;
   else if (view === 'start') page = <StartPage onNavigate={setView} pilot={reference.default_pilot} onStart={async (payload) => { await ensureEvent(payload); setView('creator'); }} />;
-  else if (view === 'creator') page = <CreatorPage onNavigate={setView} areas={reference.areas} event={event} ensureEvent={ensureEvent} saveEvent={saveEvent} neededAreas={neededAreas} onNeededAreas={onNeededAreas} onGuide={async () => { const current = await ensureEvent(); await api.generateEguide(current.id); setEguide(await api.eguide(current.id)); setImpact(await api.impact(current.id)); setView('guide'); }} />;
+  else if (view === 'creator') page = <CreatorPage onNavigate={setView} areas={reference.areas} event={event} ensureEvent={ensureEvent} saveEvent={saveEvent} neededAreas={neededAreas} onNeededAreas={onNeededAreas} onGuide={() => runGuide(true)} />;
   else if (view === 'rules') page = <RulesPage rules={reference.six_r} />;
   else if (view === 'criteria') page = <CriteriaPage criteria={reference.criteria} areaQuestions={reference.area_questions} contractClauses={reference.contract_clauses} greenwashingRisks={reference.greenwashing_risks} />;
-  else if (view === 'guide') page = <GuidePage checklist={reference.organizer_checklist} roles={reference.team_roles} eguide={eguide} eventId={event?.id} onNavigate={setView} onToggleDone={onToggleDone} onGenerate={async () => { if (event) { await api.generateEguide(event.id); setEguide(await api.eguide(event.id)); setImpact(await api.impact(event.id)); } }} />;
+  else if (view === 'guide') page = <GuidePage checklist={reference.organizer_checklist} roles={reference.team_roles} eguide={eguide} eventId={event?.id} onNavigate={setView} onToggleDone={onToggleDone} onGenerate={() => runGuide()} busy={busy} hasGuide={!!eguide} />;
   else page = <ImpactPage eguide={eguide} impact={impact} ecoSummary={reference.eco_summary} />;
   return <PageShell view={view} onNavigate={setView}>{error && <div className="api-error" role="alert">{error}</div>}{page}</PageShell>;
 }

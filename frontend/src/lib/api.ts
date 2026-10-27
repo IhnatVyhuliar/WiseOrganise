@@ -64,7 +64,8 @@ export const api = {
   recommend: (id: string) => request<unknown>(`/events/${id}/recommend`, { method: 'POST' }),
   recommendations: (id: string) => request<unknown>(`/events/${id}/recommendations`),
   selectRecommendation: (id: string, recId: string) => request<unknown>(`/events/${id}/recommendations/${recId}/select`, { method: 'POST' }),
-  generateEguide: (id: string) => request<unknown>(`/events/${id}/eguide`, { method: 'POST' }),
+  /** Returns the whole compiled guide, so no follow-up GET is needed. */
+  generateEguide: (id: string) => request<any>(`/events/${id}/eguide`, { method: 'POST' }),
   eguide: (id: string) => request<unknown>(`/events/${id}/eguide`),
   setChecklistDone: (id: string, payload: ChecklistDonePayload) => request<any>(`/events/${id}/eguide/checklist`, { method: 'PATCH', body: JSON.stringify(payload) }),
   impact: (id: string) => request<ImpactSummary>(`/events/${id}/impact`),
