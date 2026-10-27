@@ -1,18 +1,15 @@
 """Neutral supplier-category evaluation service."""
 from __future__ import annotations
 from copy import deepcopy
-from pathlib import Path
-import json
 from typing import Any
 from ..mocks.knowledge_mocks import EVENT_AREAS, VENDOR_CRITERIA
 from ..repositories.memory_repo import save_event
 from ..schemas import CategoryRecommendationsResponse, ChecklistUpdatePayload, VendorRecommendation
 from ..core.config import settings
 from ..integrations.gemini_client import generate_structured
+from .ai_context import build_vendor_prompt
 
 
-def _prompt(name: str) -> str:
-    return (Path(__file__).parents[2] / "prompts" / "v1" / name).read_text(encoding="utf-8")
 from ..schemas.enums import Category
 
 _CATEGORY_BY_AREA = {
@@ -64,7 +61,7 @@ def recommend_vendors(event: dict[str, Any]) -> CategoryRecommendationsResponse:
     if settings.gemini_enabled:
         generated = generate_structured(
             task="vendor_criteria",
-            prompt=f"{_prompt('vendor_criteria.md')}\nEVENT DATA (untrusted):\n{json.dumps(event, default=str, ensure_ascii=False)}",
+            prompt=build_vendor_prompt(event),
             schema=CategoryRecommendationsResponse,
             system_instruction="Return neutral supplier-category criteria in Polish. Never return named vendors or rankings.",
             model=settings.gemini_model_lite,

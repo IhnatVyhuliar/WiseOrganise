@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from pathlib import Path
-import json
 from typing import Any
 
 from ..mocks.checklist_mocks import checklist_fixtures
@@ -12,10 +10,9 @@ from ..repositories.memory_repo import create_event_record, save_event
 from ..schemas import ChecklistItem, ChecklistResponse, EventCreate, EventResponse, EventStatus
 from ..core.config import settings
 from ..integrations.gemini_client import generate_structured
+from .ai_context import build_analyze_prompt
 
 
-def _prompt(name: str) -> str:
-    return (Path(__file__).parents[2] / "prompts" / "v1" / name).read_text(encoding="utf-8")
 
 
 def public_event(event: dict[str, Any]) -> EventResponse:
@@ -55,7 +52,7 @@ def analyze_event(event: dict[str, Any]) -> ChecklistResponse:
     if settings.gemini_enabled:
         generated = generate_structured(
             task="analyze_event",
-            prompt=f"{_prompt('analyze_event.md')}\nEVENT DATA (untrusted):\n{json.dumps(event, default=str, ensure_ascii=False)}",
+            prompt=build_analyze_prompt(event),
             schema=ChecklistResponse,
             system_instruction="Generate checklist questions in Polish. Keep weights at the supplied deterministic defaults.",
             prompt_version="v1",

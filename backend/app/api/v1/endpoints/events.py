@@ -11,11 +11,13 @@ from ....schemas import (
     ChecklistUpdatePayload,
     CategoryRecommendationsResponse,
     EGuideResponse,
+    EmissionsSummary,
     EventCreate,
     EventResponse,
     EventUpdate,
     VendorRecommendation,
     AreaOptionsResponse, OptionSelectionPayload, OptionSelectionResponse, CriteriaResponse,
+    ChecklistDoneUpdate, NeededAreasUpdate,
 )
 from ....services.eguide_service import compile_eguide, get_eguide
 from ....services.event_service import (
@@ -25,7 +27,9 @@ from ....services.event_service import (
     public_event,
     update_event,
 )
-from ....services.options_service import get_options, select_options
+from ....services.options_service import get_options, select_needed_areas, select_options
+from ....services.checklist_builder import set_done
+from ....services.impact_service import build_impact
 from ....services.criteria_service import get_criteria
 from ....services.recommendation_service import (
     recommend_vendors,
@@ -167,6 +171,32 @@ def generate_eguide_endpoint(event_id: str) -> EGuideResponse:
         return compile_eguide(get_event_or_404(event_id))
     except LookupError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.patch("/{event_id}/needed-areas", response_model=EventResponse)
+def select_needed_areas_endpoint(event_id: str, payload: NeededAreasUpdate) -> EventResponse:
+    """Record which lifecycle areas this event actually needs."""
+
+    return select_needed_areas(get_event_or_404(event_id), payload)
+
+
+@router.patch("/{event_id}/eguide/checklist", response_model=EGuideResponse)
+def set_checklist_done_endpoint(event_id: str, payload: ChecklistDoneUpdate) -> EGuideResponse:
+    """Persist a single checkbox toggle from the guide view."""
+
+    try:
+        return EGuideResponse.model_validate(set_done(get_event_or_404(event_id), payload))
+    except LookupError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Checklist item not found") from exc
+
+
+@router.get("/{event_id}/impact", response_model=EmissionsSummary)
+def impact_endpoint(event_id: str) -> EmissionsSummary:
+    """Return the deterministic before/after impact estimate."""
+
+    return EmissionsSummary(**build_impact(get_event_or_404(event_id)))
 
 
 @router.get("/{event_id}/eguide", response_model=EGuideResponse)

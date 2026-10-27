@@ -8,7 +8,7 @@ from pydantic import AliasChoices, Field, model_validator
 
 from . import APIModel
 
-from .enums import EventStatus
+from .enums import AreaId, EventStatus
 
 
 
@@ -68,6 +68,8 @@ class EventCreate(APIModel):
 
     starting_mode: str = Field(default="needs_venue_help", validation_alias=AliasChoices("starting_mode", "startingMode", "mode"))
 
+    needed_areas: list[AreaId] | None = None
+
 
 
     @model_validator(mode="after")
@@ -117,6 +119,16 @@ class EventUpdate(APIModel):
     pilot: PilotContext | None = None
 
     starting_mode: str | None = None
+
+    needed_areas: list[AreaId] | None = None
+
+
+
+class NeededAreasUpdate(APIModel):
+
+    """Areas the organizer declares they actually need for this event."""
+
+    needed_areas: list[AreaId]
 
 
 

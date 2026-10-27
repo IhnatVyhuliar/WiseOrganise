@@ -3,7 +3,7 @@
 from fastapi import APIRouter
 
 from .endpoints.events import router as events_router
-from ...mocks.knowledge_mocks import knowledge_base, ORGANIZER_CHECKLIST, TEAM_ROLES
+from ...mocks.knowledge_mocks import knowledge_base, CONTRACT_CLAUSES, ECO_SUMMARY, GREENWASHING_RISKS, ORGANIZER_CHECKLIST, TEAM_ROLES
 from ...schemas import APIModel
 from ...schemas.event import PilotContext
 
@@ -21,6 +21,9 @@ def reference_data_endpoint() -> dict:
         {
             "organizer_checklist": ORGANIZER_CHECKLIST,
             "team_roles": TEAM_ROLES,
+            "contract_clauses": CONTRACT_CLAUSES,
+            "greenwashing_risks": GREENWASHING_RISKS,
+            "eco_summary": ECO_SUMMARY,
             "default_pilot": PilotContext().model_dump(by_alias=True),
             "source_ids": ["mentor-summary-pdf", "wiseorganise-knowledge-v1"],
         }

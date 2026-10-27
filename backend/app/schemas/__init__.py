@@ -34,6 +34,7 @@ from .checklist import (  # noqa: E402
     Weights,
 )
 from .eguide import (  # noqa: E402
+    ChecklistDoneUpdate,
     ContractClause,
     ImpactSummary,
     OrganizerChecklistItem,
@@ -58,7 +59,7 @@ from .enums import (  # noqa: E402
     Milestone,
     VerificationStatus,
 )
-from .event import EventCreate, EventPatch, EventResponse, EventUpdate, PilotContext  # noqa: E402
+from .event import EventCreate, EventPatch, EventResponse, EventUpdate, NeededAreasUpdate, PilotContext  # noqa: E402
 from .options import AreaOptionsResponse, EventArea, OptionLevel, OptionSelection, OptionSelectionPayload, OptionSelectionResponse  # noqa: E402
 from .criteria import AreaVerification, CriteriaResponse, VendorCriterion  # noqa: E402
 from .recommendation import (  # noqa: E402
@@ -71,10 +72,10 @@ from .recommendation import (  # noqa: E402
 __all__ = [
     "APIModel", "ChecklistValue", "EventStatus", "ChecklistCategory", "Category",
     "AnswerType", "AreaId", "CostEffect", "LifecycleStage", "SixR", "VerificationStatus", "FlagColor", "Milestone", "EventCreate",
-    "EventUpdate", "EventPatch", "EventResponse", "PilotContext", "ChecklistItem", "ChecklistItemUpdate",
+    "EventUpdate", "EventPatch", "EventResponse", "NeededAreasUpdate", "PilotContext", "ChecklistItem", "ChecklistItemUpdate",
     "ChecklistResponse", "ChecklistUpdatePayload", "ChecklistPatch", "Weights",
     "VendorRecommendation", "CategoryRecommendationsResponse", "RecommendationsResponse",
     "RecommendationList", "EmissionsSummary", "EcoMotivator", "SelectedVendorSummary",
-    "GreenwashingRisk", "RiskFlag", "RiskMatrix", "TimelineTask", "ContractClause",
+    "GreenwashingRisk", "RiskFlag", "RiskMatrix", "TimelineTask", "ContractClause", "ChecklistDoneUpdate",
     "EGuide", "EGuideResponse", "ImpactSummary", "OrganizerChecklistItem", "TeamRoleChecklist", "EventArea", "OptionLevel", "AreaOptionsResponse", "OptionSelection", "OptionSelectionPayload", "OptionSelectionResponse", "VendorCriterion", "AreaVerification", "CriteriaResponse",
 ]
