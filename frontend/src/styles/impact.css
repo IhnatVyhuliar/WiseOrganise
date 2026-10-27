@@ -1,1 +1,113 @@
 /* Impact and eco-motivator view styles. */
+
+.impact-page .panel + .panel { margin-top: 20px; }
+.impact-page .impact-next { margin-top: 20px; }
+
+.impact-empty { gap: 18px; }
+.impact-reference {
+  background: var(--soft);
+  border-radius: 14px;
+  padding: 18px 20px;
+}
+.impact-reference p { font-size: .98rem; margin-top: 5px; }
+
+.range-chart { display: grid; gap: 18px; }
+.range-row {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  gap: 18px;
+  align-items: center;
+}
+.range-label strong { display: block; font-weight: 700; }
+.range-label small { display: block; color: var(--muted); font-size: .85rem; margin-top: 3px; }
+.range-track {
+  position: relative;
+  height: 26px;
+  border-radius: 7px;
+  background: #eceee8;
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.range-band {
+  height: 100%;
+  border-radius: 6px;
+}
+.range-band.before { background: #9eaaa2; }
+.range-band.after { background: var(--green); }
+
+.impact-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+.impact-stat {
+  background: var(--soft);
+  border-radius: 15px;
+  padding: 18px 20px;
+  display: grid;
+  gap: 5px;
+}
+.impact-stat strong {
+  font-family: Bricolage, Atkinson, sans-serif;
+  font-size: 1.75rem;
+  color: var(--green-dark);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  letter-spacing: -.02em;
+}
+.impact-stat small { color: var(--muted); font-size: .88rem; }
+
+.motivator-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.motivator-grid article {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fbfcf9;
+  padding: 20px;
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+}
+.motivator-grid svg { color: var(--green); }
+.motivator-grid strong {
+  font-family: Bricolage, Atkinson, sans-serif;
+  font-size: 2.2rem;
+  line-height: 1;
+  color: var(--green-dark);
+}
+.motivator-grid span { color: var(--muted); font-size: .92rem; }
+.motivator-message {
+  background: var(--soft);
+  border-radius: 13px;
+  padding: 15px 17px;
+  font-size: 1rem;
+}
+
+.source-columns {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 22px;
+}
+.source-list {
+  display: grid;
+  gap: 7px;
+  list-style: none;
+  margin-top: 9px;
+}
+.source-list li {
+  border-left: 3px solid var(--green);
+  padding: 5px 0 5px 12px;
+  font-size: .95rem;
+  color: #314038;
+}
+
+@media (max-width: 900px) {
+  .range-row { grid-template-columns: 1fr; gap: 8px; }
+  .impact-stats,
+  .motivator-grid,
+  .source-columns { grid-template-columns: 1fr; }
+}

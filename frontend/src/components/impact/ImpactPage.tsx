@@ -1,4 +1,181 @@
-import { useState } from 'react';
-import { ArrowRight, BarChart3, ClipboardCheck } from 'lucide-react';
+import { AlertTriangle, ArrowRight, BarChart3, ClipboardCheck, FileText, Leaf, Sparkles, TreePine, Wallet } from 'lucide-react';
 import type { EcoSummary, ImpactSummary } from '../../types';
-export function ImpactPage({eguide,impact,ecoSummary}:{eguide?:any;impact:ImpactSummary|null;ecoSummary:EcoSummary|null}){ void impact; void ecoSummary; const [before,setBefore]=useState({car:55,rail:25,waste:42}); const [after,setAfter]=useState({car:25,rail:55,waste:18}); const rows=[['Samochód',[before.car,after.car],'% uczestników'],['Kolej / autobus',[before.rail,after.rail],'% uczestników'],['Odpady',[before.waste,after.waste],'kg']]; return <main className="page impact-page"><div className="page-heading"><div><div className="eyebrow">Pomiar</div><h1>Wpływ przed i po</h1><p>Wpisz dane z ankiety dojazdu, wagi odpadów i faktur. Moduł pokazuje zmianę, a nie pozorną precyzję.</p></div></div><section className="impact-panel"><div className="impact-inputs"><h2>Dane do porównania</h2><label>Samochód przed<input type="number" value={before.car} onChange={e=>setBefore({...before,car:Number(e.target.value)})}/></label><label>Samochód po<input type="number" value={after.car} onChange={e=>setAfter({...after,car:Number(e.target.value)})}/></label><label>Kolej/autobus przed<input type="number" value={before.rail} onChange={e=>setBefore({...before,rail:Number(e.target.value)})}/></label><label>Kolej/autobus po<input type="number" value={after.rail} onChange={e=>setAfter({...after,rail:Number(e.target.value)})}/></label><label>Odpady przed (kg)<input type="number" value={before.waste} onChange={e=>setBefore({...before,waste:Number(e.target.value)})}/></label><label>Odpady po (kg)<input type="number" value={after.waste} onChange={e=>setAfter({...after,waste:Number(e.target.value)})}/></label></div><div className="impact-chart"><div className="chart-header"><h2>Porównanie</h2><span className="tag">Szacunek z danych organizatora</span></div>{rows.map(([label,values,unit])=><div className="chart-row" key={String(label)}><div className="chart-label"><strong>{label}</strong><small>{unit}</small></div><div className="bars"><div className="bar before" style={{width:`${Math.min(100,Number((values as number[])[0]))}%`}}><span>{(values as number[])[0]}</span></div><div className="bar after" style={{width:`${Math.min(100,Number((values as number[])[1]))}%`}}><span>{(values as number[])[1]}</span></div></div></div>)}<div className="legend"><span><i className="dot before-dot"/>Przed</span><ArrowRight size={16}/><span><i className="dot after-dot"/>Po</span></div></div></section><section className="impact-next"><ClipboardCheck size={22}/><div><h2>Co zapisujemy na kolejną edycję?</h2><p>Które decyzje obniżyły koszty, gdzie uczestnicy potrzebowali więcej informacji i jaki obszar wymaga następnej poprawy.</p></div><BarChart3 size={40}/></section></main> }
+
+const formatKg = (value: number) => `${value.toLocaleString('pl-PL', { maximumFractionDigits: 1 })} kg CO2e`;
+const formatPln = (value: number) => `${value.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł`;
+
+/** One before/after range drawn as a CSS band, scaled against the largest value shown. */
+function RangeBar({ variant, label, min, max, scaleMax }: { variant: 'before' | 'after'; label: string; min: number; max: number; scaleMax: number }) {
+  const safeScale = scaleMax > 0 ? scaleMax : 1;
+  const offset = Math.max(0, Math.min(100, (min / safeScale) * 100));
+  const width = Math.max(2, Math.min(100 - offset, ((max - min) / safeScale) * 100));
+  return (
+    <div className="range-row">
+      <div className="range-label">
+        <strong>{label}</strong>
+        <small>{formatKg(min)} – {formatKg(max)}</small>
+      </div>
+      <div className="range-track">
+        <div className={`range-band ${variant}`} style={{ marginLeft: `${offset}%`, width: `${width}%` }} />
+      </div>
+    </div>
+  );
+}
+
+export function ImpactPage({ eguide, impact, ecoSummary }: { eguide?: any; impact: ImpactSummary | null; ecoSummary: EcoSummary | null }) {
+  const hasGuide = Boolean(eguide);
+  const disclaimer = 'Liczby poniżej są demonstracyjne. Powstają z wybranych poziomów i stałej bazy wiedzy, nie z pomiaru tego wydarzenia.';
+
+  if (!impact) {
+    return (
+      <main className="page impact-page">
+        <div className="page-heading">
+          <div>
+            <div className="eyebrow">Pomiar</div>
+            <h1>Wpływ przed i po</h1>
+            <p>Porównanie powstaje po wygenerowaniu poradnika na podstawie poziomów wybranych w kreatorze.</p>
+          </div>
+        </div>
+        <section className="panel impact-empty">
+          <div className="section-title">
+            <Sparkles size={21} />
+            <div>
+              <h2>{hasGuide ? 'Szacunek nie został jeszcze pobrany' : 'Nie ma jeszcze poradnika dla tego wydarzenia'}</h2>
+              <p>Przejdź do kreatora, wybierz poziom w potrzebnych obszarach i wygeneruj poradnik. Wtedy pokażemy tu zakres przed i po optymalizacji.</p>
+            </div>
+          </div>
+          {ecoSummary && (
+            <div className="impact-reference">
+              <div className="eyebrow">Przykładowa skala odniesienia dla 100 uczestników</div>
+              <p>
+                Przed optymalizacją {formatKg(ecoSummary.kgCo2eMin)} – {formatKg(ecoSummary.kgCo2eMax)}, po pełnej optymalizacji{' '}
+                {formatKg(ecoSummary.optimizedKgCo2eMin)} – {formatKg(ecoSummary.optimizedKgCo2eMax)}.
+              </p>
+            </div>
+          )}
+          <div className="notice">
+            <AlertTriangle size={19} />
+            <p>{disclaimer}</p>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  const motivator = impact.ecoMotivator;
+  const scaleMax = Math.max(impact.kgCo2eMax, impact.optimizedKgCo2eMax, 1);
+  const savedMin = Math.max(0, impact.kgCo2eMin - impact.optimizedKgCo2eMin);
+  const savedMax = Math.max(0, impact.kgCo2eMax - impact.optimizedKgCo2eMax);
+
+  return (
+    <main className="page impact-page">
+      <div className="page-heading">
+        <div>
+          <div className="eyebrow">Pomiar</div>
+          <h1>Wpływ przed i po</h1>
+          <p>Szacunek wyliczony z poziomów wybranych w kreatorze. Pokazujemy kierunek zmiany, a nie pozorną precyzję.</p>
+        </div>
+        <div className="no-ranking">
+          <AlertTriangle size={18} />
+          <span>Dane demonstracyjne</span>
+        </div>
+      </div>
+
+      <section className="panel impact-compare">
+        <div className="section-title">
+          <BarChart3 size={21} />
+          <div>
+            <h2>Szacowany ślad węglowy wydarzenia</h2>
+            <p>Zakres przed optymalizacją w porównaniu z zakresem po wybranych poziomach.</p>
+          </div>
+        </div>
+        <div className="range-chart">
+          <RangeBar variant="before" label="Przed optymalizacją" min={impact.kgCo2eMin} max={impact.kgCo2eMax} scaleMax={scaleMax} />
+          <RangeBar variant="after" label="Po optymalizacji" min={impact.optimizedKgCo2eMin} max={impact.optimizedKgCo2eMax} scaleMax={scaleMax} />
+        </div>
+        <div className="legend">
+          <span><i className="dot before-dot" />Przed</span>
+          <ArrowRight size={16} />
+          <span><i className="dot after-dot" />Po</span>
+        </div>
+        <div className="impact-stats">
+          <div className="impact-stat">
+            <div className="eyebrow">Różnica w zakresie</div>
+            <strong>{formatKg(savedMin)} – {formatKg(savedMax)}</strong>
+            <small>mniej niż w wariancie przed optymalizacją</small>
+          </div>
+          <div className="impact-stat">
+            <div className="eyebrow">Szacowana oszczędność</div>
+            <strong><Wallet size={20} /> {formatPln(impact.savedPln)}</strong>
+            <small>z wyborów oznaczonych jako obniżające koszt</small>
+          </div>
+        </div>
+      </section>
+
+      <section className="panel impact-motivator">
+        <div className="section-title">
+          <Leaf size={21} />
+          <div>
+            <h2>Co to znaczy w praktyce</h2>
+            <p>Trzy liczby opisują tę samą oszczędność w różnych jednostkach porównawczych.</p>
+          </div>
+        </div>
+        <div className="motivator-grid">
+          <article>
+            <Leaf size={22} />
+            <strong>{motivator.squirrelsSaved}</strong>
+            <span>{motivator.metricName || 'wiewiórki uratowane'}</span>
+          </article>
+          <article>
+            <TreePine size={22} />
+            <strong>{motivator.treesSaved}</strong>
+            <span>drzewa</span>
+          </article>
+          <article>
+            <BarChart3 size={22} />
+            <strong>{motivator.co2eSavedKg.toLocaleString('pl-PL', { maximumFractionDigits: 1 })}</strong>
+            <span>kg CO2e mniej</span>
+          </article>
+        </div>
+        <p className="motivator-message">{motivator.message}</p>
+      </section>
+
+      <section className="panel impact-sources">
+        <div className="section-title">
+          <FileText size={21} />
+          <div>
+            <h2>Skąd biorą się te liczby</h2>
+            <p>Wskaźniki emisji i źródła danych, które domykają cykl po wydarzeniu.</p>
+          </div>
+        </div>
+        <div className="source-columns">
+          <div>
+            <div className="eyebrow">Wskaźniki emisji</div>
+            <ul className="source-list">
+              {impact.emissionFactorSources.map((source) => <li key={source}>{source}</li>)}
+            </ul>
+          </div>
+          <div>
+            <div className="eyebrow">Źródła danych po wydarzeniu</div>
+            <ul className="source-list">
+              {impact.provenance.map((source) => <li key={source}>{source}</li>)}
+            </ul>
+          </div>
+        </div>
+        <div className="notice">
+          <AlertTriangle size={19} />
+          <p>{disclaimer} Aby raportować rzeczywisty wpływ, zbierz ankietę dojazdu, zważ odpady według frakcji i uzupełnij dane z faktur dostawców.</p>
+        </div>
+      </section>
+
+      <section className="impact-next">
+        <ClipboardCheck size={22} />
+        <div>
+          <h2>Co zapisujemy na kolejną edycję?</h2>
+          <p>Które decyzje obniżyły koszty, gdzie uczestnicy potrzebowali więcej informacji i jaki obszar wymaga następnej poprawy.</p>
+        </div>
+        <BarChart3 size={40} />
+      </section>
+    </main>
+  );
+}
