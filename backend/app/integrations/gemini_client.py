@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 import time
-from typing import Any, TypeVar
+from typing import Any, Iterable, TypeVar
 
 from pydantic import BaseModel
 
@@ -37,6 +37,38 @@ def _sdk() -> tuple[Any, Any]:
     return genai, types
 
 
+def collect_ids(payload: Any) -> set[str]:
+    """Collect every ``id`` value in a validated response payload."""
+
+    found: set[str] = set()
+    if isinstance(payload, dict):
+        identifier = payload.get("id")
+        if isinstance(identifier, str):
+            found.add(identifier)
+        for value in payload.values():
+            found |= collect_ids(value)
+    elif isinstance(payload, (list, tuple)):
+        for value in payload:
+            found |= collect_ids(value)
+    return found
+
+
+def check_coverage(result: BaseModel, allowed_ids: Iterable[str] | None) -> None:
+    """Reject a response that returns ids outside the supplied knowledge base.
+
+    This is the technical half of "AI must not invent facts": the model may
+    rephrase supplied items, never add new ones. Callers that supply no ids
+    (``allowed_ids`` is ``None``) are not guarded.
+    """
+
+    if allowed_ids is None:
+        return
+    allowed = set(allowed_ids)
+    invented = sorted(collect_ids(result.model_dump()) - allowed)
+    if invented:
+        raise ValueError(f"Model returned ids outside the supplied knowledge base: {', '.join(invented)}")
+
+
 def generate_structured(
     *,
     task: str,
@@ -45,11 +77,19 @@ def generate_structured(
     system_instruction: str,
     model: str | None = None,
     prompt_version: str = "v1",
+    allowed_ids: Iterable[str] | None = None,
 ) -> SchemaT:
-    """Generate and validate one structured Gemini response."""
+    """Generate and validate one structured Gemini response.
+
+    ``allowed_ids`` is the set of knowledge-base item ids that the prompt
+    supplied. It may also travel on the prompt itself (``ai_context``'s
+    ``GroundedPrompt``), so orchestration code does not have to repeat it.
+    """
 
     if not settings.gemini_enabled:
         raise RuntimeError("Gemini is disabled; use the deterministic mock service")
+    if allowed_ids is None:
+        allowed_ids = getattr(prompt, "allowed_ids", None)
     genai, types = _sdk()
     started = time.perf_counter()
     valid = False
@@ -69,6 +109,10 @@ def generate_structured(
         if not text:
             raise ValueError("Gemini returned an empty response")
         result = schema.model_validate_json(text)
+        # Coverage guard: a schema-valid answer that invents ids is still a
+        # fabrication, so it must fail and let the caller fall back to the
+        # deterministic branch.
+        check_coverage(result, allowed_ids)
         valid = True
         return result
     finally:
