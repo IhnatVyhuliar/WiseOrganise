@@ -1,1 +1,100 @@
 /* Criteria, questions, clauses and greenwashing risks styles. */
+
+.knowledge-section {
+  margin-top: 42px;
+  border-top: 1px solid var(--line);
+  padding-top: 34px;
+  display: grid;
+  gap: 22px;
+}
+
+.area-questions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.area-questions-grid .questions-card h3 { font-size: 1.15rem; }
+.area-questions-grid .questions-card ul { font-size: .95rem; }
+
+.risk-matrix {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.risk-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--line);
+  border-radius: 16px;
+  padding: 20px;
+  display: grid;
+  gap: 11px;
+  align-content: start;
+}
+.risk-card.flag-green { border-left-color: #2f5d46; }
+.risk-card.flag-yellow { border-left-color: #c58a1d; }
+.risk-card.flag-red { border-left-color: #a8322a; }
+.risk-card header {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.risk-card h3 { font-size: 1.1rem; }
+.flag-chip {
+  border-radius: 999px;
+  padding: 4px 11px;
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+.flag-chip.flag-green { background: #e2efe6; color: #1e3f2f; }
+.flag-chip.flag-yellow { background: #fbe7d6; color: #8a430b; }
+.flag-chip.flag-red { background: #f7ddda; color: #7d241d; }
+.risk-explanation { font-size: .95rem; }
+.risk-follow-up {
+  background: var(--soft);
+  border-radius: 12px;
+  padding: 13px;
+}
+.risk-follow-up strong {
+  font-size: .78rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: #24493a;
+}
+.risk-follow-up p { font-size: .95rem; margin-top: 4px; }
+
+.clause-columns {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+.clause-group {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 22px;
+}
+.clause-group .eyebrow { display: block; margin-bottom: 12px; }
+.clause-list {
+  display: grid;
+  gap: 11px;
+  list-style: none;
+}
+.clause-list li {
+  border-left: 3px solid var(--green);
+  padding: 4px 0 4px 13px;
+  font-size: .97rem;
+  color: #314038;
+}
+
+@media (max-width: 1100px) {
+  .area-questions-grid,
+  .risk-matrix { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 760px) {
+  .area-questions-grid,
+  .risk-matrix,
+  .clause-columns { grid-template-columns: 1fr; }
+}
