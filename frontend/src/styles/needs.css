@@ -17,6 +17,9 @@
 .needs-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
 
 /* Guide: one block of organizer tasks per lifecycle milestone. */
+.guide-page > .notice{margin-bottom:20px}
+.guide-page .guide-progress{margin-top:20px}
+.guide-page .guide-actions{margin-top:28px}
 .milestone-group{display:grid;gap:11px}
 .milestone-group+.milestone-group{margin-top:22px}
 .milestone-heading{display:flex;flex-wrap:wrap;gap:9px;align-items:baseline}
