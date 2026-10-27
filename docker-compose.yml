@@ -19,7 +19,7 @@ services:
   caddy:
     image: caddy:2.9-alpine
     ports:
-      - "4540:4540"
+      - "${EDGE_BIND_ADDR:-127.0.0.1}:4540:4540"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
