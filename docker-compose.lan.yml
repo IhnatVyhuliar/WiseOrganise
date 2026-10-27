@@ -1,0 +1,16 @@
+# Opt-in TLS overlay for the LAN edge proxy. The default stack stays plain HTTP
+# so local development is unaffected:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.lan.yml up -d
+#
+# Expects the pair issued by the edge's make-cert.sh (SAN lan-backend.internal),
+# copied from the NAS. Put it in ./certs, or point LAN_CERT_DIR elsewhere.
+# privkey.pem may stay 0600 root: the official Caddy image runs as root.
+services:
+  caddy:
+    volumes:
+      - ./Caddyfile.lan:/etc/caddy/Caddyfile:ro
+      - ${LAN_CERT_DIR:-./certs}/fullchain.pem:/certs/fullchain.pem:ro
+      - ${LAN_CERT_DIR:-./certs}/privkey.pem:/certs/privkey.pem:ro
+      - caddy_data:/data
+      - caddy_config:/config
