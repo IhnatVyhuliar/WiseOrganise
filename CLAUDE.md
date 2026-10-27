@@ -54,6 +54,16 @@ python -m compileall backend/app
 
 Caddy (`Caddyfile`) routes `/api/*`, `/docs*`, and `/openapi.json` to the backend and everything else to the frontend, so the frontend's default `API_BASE_URL` of `/api/v1` works without CORS in the Docker setup.
 
+### Deployment behind the NAS edge
+
+The pilot is served at `https://wiseorganise.reachit.space`. The NAS edge (`edge-nginx`) terminates the public TLS and forwards over the LAN by **plain HTTP** to mainserv `192.168.0.3`, whose nginx vhost proxies `:80` to `http://127.0.0.1:4540` — this stack, on the same box. Every other app on mainserv uses an HTTPS LAN hop with SNI `lan-backend.internal` and a pinned certificate; WiseOrganise is the one exception. The 443 vhost is kept in place, so switching back to the TLS hop needs no change here (the opt-in overlay was reverted in `a0b0a0f`).
+
+Three repo-side consequences, all required for the public page to work:
+
+- `docker-compose.yml` publishes Caddy on `${EDGE_BIND_ADDR:-127.0.0.1}:4540`. Only mainserv's own nginx needs that port; set `EDGE_BIND_ADDR=0.0.0.0` only to reach the stack from another machine during development.
+- `Caddyfile` trusts `private_ranges` as proxies, so the `X-Forwarded-Proto: https` and the client IP set by the two nginx hops survive instead of being rewritten.
+- `backend/Dockerfile` runs uvicorn with `--proxy-headers --forwarded-allow-ips *`, so FastAPI builds redirects as `https://` — without it a trailing-slash `307` is blocked as mixed content.
+
 `frontend/scripts/unpack_bundle.py` is a repeatable decoder for the original HTML bundle (`frontend/WiseOrganise — aplikacja.html`). `frontend/unpacked/` and `Legacy/` are inspection artefacts, not production code.
 
 ## Architecture

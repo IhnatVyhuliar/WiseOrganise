@@ -22,6 +22,7 @@ class Settings(BaseSettings):
             "http://localhost:5173",
             "http://127.0.0.1:5173",
             "http://127.0.0.1:3000",
+            "https://wiseorganise.reachit.space",
         ]
     )
     gemini_api_key: str = Field(default="", validation_alias="GEMINI_API_KEY")
