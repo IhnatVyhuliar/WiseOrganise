@@ -160,10 +160,10 @@ def test_a_failing_cache_write_still_returns_the_answer(monkeypatch, client, gem
     _fake_model(monkeypatch)
     event_id = _create(client)
 
-    def broken(event):
+    def broken(event_id, fields, **kwargs):
         raise RuntimeError("db down")
 
-    monkeypatch.setattr(suggestion_service, "save_event", broken)
+    monkeypatch.setattr(suggestion_service, "merge_event_fields", broken)
     r = client.post(f"/api/v1/events/{event_id}/suggest-areas")
     assert r.status_code == 200 and r.json()["available"] is True
 

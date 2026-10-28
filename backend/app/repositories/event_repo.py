@@ -124,6 +124,33 @@ def _upsert(event: dict[str, Any]) -> None:
         )
 
 
+def merge_event_fields(event_id: str, fields: dict[str, Any], *, expect_run_id: str | None = None) -> bool:
+    """Merge a few top-level payload fields in one statement; return whether a row changed.
+
+    ``save_event`` writes back the whole snapshot its caller read, so a slow
+    writer (the background AI pass, the suggestion cache) would revert every
+    concurrent edit made in the meantime. This merge touches only the keys it
+    is given. With ``expect_run_id`` the write also lands only while the stored
+    generation nonce still matches, so a superseded job writes nothing at all.
+    """
+
+    now = utc_now()
+    payload = {**fields, "updated_at": now}
+    clause = " AND payload->>'eguide_run_id' = %s" if expect_run_id is not None else ""
+    params: list[Any] = [_dump(payload), now, event_id]
+    if expect_run_id is not None:
+        params.append(expect_run_id)
+    with _pool.connection() as conn:
+        return (
+            conn.execute(
+                "UPDATE events SET payload = payload || %s::jsonb, updated_at = %s "
+                f"WHERE id = %s{clause}",
+                tuple(params),
+            ).rowcount
+            > 0
+        )
+
+
 _SLUG_ALPHABET = string.ascii_lowercase + string.digits
 _SLUG_LENGTH = 8
 _SLUG_ATTEMPTS = 5

@@ -8,13 +8,13 @@ SCORE_FIELDS = (
 )
 
 
-def test_openapi_has_no_scoring_fields(client):
-    text = client.get("/openapi.json").text
+def test_openapi_has_no_scoring_fields(static_client):
+    text = static_client.get("/openapi.json").text
     assert not [field for field in SCORE_FIELDS if field in text]
 
 
-def test_recommend_routes_are_gone(client):
-    paths = client.get("/openapi.json").json()["paths"]
+def test_recommend_routes_are_gone(static_client):
+    paths = static_client.get("/openapi.json").json()["paths"]
     assert not [path for path in paths if "recommend" in path]
 
 

@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .api.v1.router import router as api_v1_router
 from .core.config import settings
 from .repositories.event_repo import close_pool, init_schema
+from .workers.ai_jobs import sweep_stale_ai_runs
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,13 @@ async def lifespan(_: FastAPI):
             if attempt == settings.db_connect_retries:
                 raise
             time.sleep(settings.db_connect_delay_seconds)
+    try:
+        # No background pass survives a restart, so no guide may stay "w toku".
+        swept = sweep_stale_ai_runs()
+        if swept:
+            logger.info("Marked %d interrupted AI guide run(s) as failed", swept)
+    except Exception:  # noqa: BLE001 - a failed sweep must not block startup
+        logger.warning("Could not sweep interrupted AI guide runs", exc_info=True)
     yield
     close_pool()
 

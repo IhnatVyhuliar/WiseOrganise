@@ -14,7 +14,7 @@ from ..mocks.knowledge_mocks import EVENT_AREAS
 from ..schemas import AreaSuggestion, AreaSuggestionResponse
 from ..core.config import settings
 from ..integrations.gemini_client import generate_structured
-from ..repositories.event_repo import get_event, save_event
+from ..repositories.event_repo import merge_event_fields
 from .ai_context import build_area_suggestion_prompt, event_facts, facts_hash
 
 logger = logging.getLogger(__name__)
@@ -85,12 +85,13 @@ def suggest_areas(event: dict[str, Any]) -> AreaSuggestionResponse:
     response = AreaSuggestionResponse(available=True, message=_OK, suggestions=kept)
     if digest is not None:
         try:
-            # The model call can take seconds; re-read so a guide, nonce or edit stored
-            # meanwhile is not overwritten by this request's stale copy.
-            fresh = get_event(event["id"])
-            if fresh is not None:
-                fresh["suggestion_cache"] = {"hash": digest, "response": response.model_dump(by_alias=False)}
-                save_event(fresh)
+            # The model call can take seconds; write only this one field, so a
+            # guide, nonce or edit stored meanwhile is not reverted by this
+            # request's stale copy of the record.
+            merge_event_fields(
+                event["id"],
+                {"suggestion_cache": {"hash": digest, "response": response.model_dump(by_alias=False)}},
+            )
         except Exception:
             logger.warning("Could not store the area suggestion cache", exc_info=True)
     return response

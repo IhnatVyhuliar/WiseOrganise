@@ -38,6 +38,17 @@ def base_eguide(event: dict[str, Any], ai_status: AiStatus = AiStatus.DISABLED) 
     )
 
 
+def invalidate_eguide(event: dict[str, Any]) -> None:
+    """Drop the stored guide so the next read rebuilds it. Does not save.
+
+    Every mutation that can change the guide's content goes through here: a
+    stored guide is a cache of the event, never a second source of truth. The
+    generation nonce goes with it, because the guide it pointed at is gone.
+    """
+    event["eguide"] = None
+    event["eguide_run_id"] = None
+
+
 def compile_eguide(event: dict[str, Any]) -> EGuideResponse:
     """Store and return the base guide now; Gemini refines its text in the background."""
     ai_status = AiStatus.IN_PROGRESS if settings.gemini_enabled else AiStatus.DISABLED

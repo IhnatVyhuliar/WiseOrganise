@@ -33,10 +33,14 @@ def gemini_on(monkeypatch):
 
 def _model_guide(event_id: str, text: str) -> EGuideResponse:
     """A model answer with deliberately wrong numbers and its own text."""
+    from app.repositories import event_repo
     from app.services.eguide_service import base_eguide
     from app.services.impact_service import build_impact
 
-    guide = base_eguide({"id": event_id, "title": "T"})
+    # Built from the stored event, like a well-behaved model answer: it carries
+    # exactly the checklist items and roles the prompt supplied.
+    event = event_repo.get_event(event_id) or {"id": event_id, "title": "T"}
+    guide = base_eguide(event)
     bad = build_impact({"id": event_id, "title": "T"})
     bad["saved_pln"] = 999999.0
     guide.impact_summary = type(guide.impact_summary).model_validate(bad)
@@ -246,3 +250,122 @@ def test_the_nonce_lives_on_the_event_record(monkeypatch, client, gemini_on):
     body = client.post(f"/api/v1/events/{event_id}/eguide").json()
     assert "aiRunId" not in body
     assert event_repo.get_event(event_id)["eguide_run_id"] == submitted[0][1]
+
+
+def test_a_guide_stored_before_the_selections_is_rebuilt_after_them(client):
+    """A read stores the guide; picking levels must not leave that stale copy behind."""
+    event_id = _create(client)
+    assert client.get(f"/api/v1/events/{event_id}/eguide").json()["ustalenia"] == []
+    client.patch(f"/api/v1/events/{event_id}/options", json={"selections": [{"areaId": "catering", "level": 2}]})
+    guide = client.get(f"/api/v1/events/{event_id}/eguide").json()
+    assert [(u["areaId"], u["level"]) for u in guide["ustalenia"]] == [("catering", 2)]
+    slug = client.get(f"/api/v1/events/{event_id}").json()["slug"]
+    public = client.get(f"/api/v1/public/events/{slug}").json()
+    assert [(u["areaId"], u["level"]) for u in public["ustalenia"]] == [("catering", 2)]
+
+
+def test_selecting_options_also_clears_the_generation_nonce(monkeypatch, client, gemini_on):
+    from app.repositories import event_repo
+
+    event_id = _create(client)
+    _capture_jobs(monkeypatch)
+    client.post(f"/api/v1/events/{event_id}/eguide")
+    assert event_repo.get_event(event_id)["eguide_run_id"]
+    client.patch(f"/api/v1/events/{event_id}/options", json={"selections": [{"areaId": "catering", "level": 2}]})
+    stored = event_repo.get_event(event_id)
+    assert stored["eguide"] is None and stored["eguide_run_id"] is None
+
+
+def test_a_vendor_name_invented_by_the_model_never_reaches_the_stored_guide(monkeypatch, client, gemini_on):
+    event_id = _create(client)
+    base = client.get(f"/api/v1/events/{event_id}/eguide").json()
+
+    def model(**kw):
+        guide = _model_guide(event_id, "AI text")
+        guide.greenwashing_risk_matrix[0].vendor_name = "Sodexo"
+        guide.greenwashing_risk_matrix[0].claim = "Sodexo jest eko."
+        guide.contract_clauses_and_questions[0].text = "Umowa z Sodexo."
+        return guide
+
+    monkeypatch.setattr(ai_jobs, "generate_structured", model)
+    client.post(f"/api/v1/events/{event_id}/eguide")
+    guide = _wait_for_status(client, event_id, "gotowe")
+    assert "Sodexo" not in client.get(f"/api/v1/events/{event_id}/eguide").text
+    assert guide["greenwashingRiskMatrix"] == base["greenwashingRiskMatrix"]
+    assert guide["contractClausesAndQuestions"] == base["contractClausesAndQuestions"]
+    assert guide["organizerChecklist"][0]["label"] == "AI text"  # text is still the model's
+
+
+def test_a_model_that_drops_a_checklist_item_keeps_the_base_guide(monkeypatch, client, gemini_on):
+    event_id = _create(client)
+    base = client.get(f"/api/v1/events/{event_id}/eguide").json()
+
+    def model(**kw):
+        guide = _model_guide(event_id, "AI text")
+        guide.organizer_checklist.pop()
+        return guide
+
+    monkeypatch.setattr(ai_jobs, "generate_structured", model)
+    client.post(f"/api/v1/events/{event_id}/eguide")
+    guide = _wait_for_status(client, event_id, "nieudane")
+    assert guide["aiStatus"] == "nieudane"
+    assert {**guide, "aiStatus": None} == {**base, "aiStatus": None}
+
+
+def test_a_model_that_renames_a_team_role_keeps_the_base_guide(monkeypatch, client, gemini_on):
+    event_id = _create(client)
+    base = client.get(f"/api/v1/events/{event_id}/eguide").json()
+
+    def model(**kw):
+        guide = _model_guide(event_id, "AI text")
+        guide.team_checklists[0].role = "Nowa rola"
+        return guide
+
+    monkeypatch.setattr(ai_jobs, "generate_structured", model)
+    client.post(f"/api/v1/events/{event_id}/eguide")
+    guide = _wait_for_status(client, event_id, "nieudane")
+    assert {**guide, "aiStatus": None} == {**base, "aiStatus": None}
+
+
+def test_an_edit_made_while_the_model_works_is_not_reverted_by_the_job(monkeypatch, client, gemini_on):
+    event_id = _create(client)
+    submitted = _capture_jobs(monkeypatch)
+    client.post(f"/api/v1/events/{event_id}/eguide")
+
+    monkeypatch.setattr(ai_jobs, "generate_structured", lambda **kw: _model_guide(event_id, "AI text"))
+    real_build_impact = ai_jobs.build_impact
+
+    def concurrent_edit(event):
+        # Runs after the job re-read the record and before it writes: a second
+        # writer saves the whole record while the job holds its own copy.
+        assert client.patch(f"/api/v1/events/{event_id}", json={"title": "Nowy tytul"}).status_code == 200
+        return real_build_impact(event)
+
+    monkeypatch.setattr(ai_jobs, "build_impact", concurrent_edit)
+    ai_jobs.run_eguide_job(*submitted[0])
+    assert client.get(f"/api/v1/events/{event_id}").json()["title"] == "Nowy tytul"
+    assert client.get(f"/api/v1/events/{event_id}/eguide").json()["aiStatus"] == "gotowe"
+
+
+def test_a_guide_left_in_progress_by_a_restart_is_swept_to_nieudane(client):
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+    from app.repositories import event_repo
+
+    event_id = _create(client)
+    event = event_repo.get_event(event_id)
+    event["eguide"] = ai_jobs.EGuideResponse.model_validate(
+        {**client.get(f"/api/v1/events/{event_id}/eguide").json(), "aiStatus": "w toku"}
+    ).model_dump()
+    event["eguide_run_id"] = "orphan"
+    event_repo.save_event(event)
+    try:
+        with TestClient(app):  # the startup path: init_schema() plus the sweep
+            pass
+    finally:
+        event_repo.reset_pool()  # the lifespan closed the pool on the way out
+        event_repo.init_schema()
+    stored = event_repo.get_event(event_id)
+    assert stored["eguide"]["ai_status"] == "nieudane"
+    assert stored["eguide_run_id"] is None

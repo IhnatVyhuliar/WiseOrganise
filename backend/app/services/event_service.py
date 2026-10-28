@@ -11,6 +11,7 @@ from ..schemas import ChecklistItem, ChecklistResponse, ChecklistUpdatePayload, 
 from ..core.config import settings
 from ..integrations.gemini_client import generate_structured
 from .ai_context import build_analyze_prompt
+from .eguide_service import invalidate_eguide
 
 
 # Editing these invalidates the legacy conditional checklist.
@@ -54,7 +55,7 @@ def update_event(event: dict[str, Any], changes: dict[str, Any]) -> EventRespons
     if invalidates_guide:
         event["recommendations"] = {}
         event["selected_options"] = {}
-        event["eguide"] = None
+        invalidate_eguide(event)
     if invalidates_checklist or invalidates_guide:
         event["status"] = EventStatus.CHECKLIST_PENDING if event.get("checklist") is not None else EventStatus.DRAFT
     return public_event(save_event(event))
@@ -82,7 +83,7 @@ def analyze_event(event: dict[str, Any]) -> ChecklistResponse:
             item["is_completed"] = False
             event["checklist"].append(item)
     event["recommendations"] = {}
-    event["eguide"] = None
+    invalidate_eguide(event)
     event["status"] = EventStatus.CHECKLIST_PENDING
     save_event(event)
     return checklist_response(event)
@@ -120,5 +121,5 @@ def update_checklist(event: dict[str, Any], payload: ChecklistUpdatePayload) -> 
     if weights is not None:
         event["weights"] = weights.model_dump()
     event["recommendations"] = {}
-    event["eguide"] = None
+    invalidate_eguide(event)
     save_event(event)
