@@ -96,9 +96,7 @@ Everything lives in a single `.env` at the repo root, copied from `.env.example`
 | `EDGE_BIND_ADDR` | `127.0.0.1` | Which host interface Caddy's port 4540 is published on. | Your choice. Set `0.0.0.0` only to reach the stack from another machine during development. |
 | `VITE_API_BASE_URL` | `/api/v1` | Base URL the SPA calls. Read by Vite **at build time**. | Only matters when running the Vite dev server against a separately started backend — then set `http://localhost:8000/api/v1`. |
 
-Defaults are defined in `backend/app/core/config.py`, `docker-compose.yml` and `frontend/src/lib/api.ts`; `.env` is gitignored and never committed. `.env.example` does not list `PUBLIC_BASE_URL`, `DB_CONNECT_RETRIES`, `DB_CONNECT_DELAY_SECONDS` or `VITE_API_BASE_URL`; the code defaults apply unless you add them.
-
-**Compose forwarding caveat.** `docker-compose.yml` passes only `GEMINI_API_KEY`, `GEMINI_MODEL_MAIN`, `GEMINI_MODEL_LITE`, `USE_MOCK_AI`, `DATABASE_URL` (backend) and `POSTGRES_PASSWORD` (db) into the containers. `GEMINI_TIMEOUT_SECONDS`, `PUBLIC_BASE_URL`, `DB_CONNECT_RETRIES` and `DB_CONNECT_DELAY_SECONDS` therefore keep their `config.py` defaults under `docker compose` unless you add them to the backend's `environment:` block. They take effect as written when you run the backend directly.
+Defaults are defined in `backend/app/core/config.py`, `docker-compose.yml` and `frontend/src/lib/api.ts`; `.env` is gitignored and never committed. `.env.example` does not list `DB_CONNECT_RETRIES`, `DB_CONNECT_DELAY_SECONDS` or `VITE_API_BASE_URL`; their defaults apply unless you add them. `docker-compose.yml` forwards every other backend variable in the table from `.env` with the same default as `config.py`.
 
 ### Turning the AI on
 
