@@ -7,11 +7,24 @@ BACKEND = Path(__file__).resolve().parents[1]
 _LITERAL = ("UŁ", "Uniwersytet", "Łód", "Łod", "Lodz", "uczeln")
 
 
-def _escaped(term: str) -> str:
-    return "".join(f"\\u{ord(c):04x}" if ord(c) > 127 else c for c in term)
+def _spellings(term: str) -> set[str]:
+    """Every literal/escaped permutation of the non-ASCII letters of a term.
+
+    Source files here mix both styles inside one string (an escaped capital
+    letter followed by a literal accented one), so all combinations count.
+    """
+    positions = [i for i, c in enumerate(term) if ord(c) > 127]
+    out = set()
+    for mask in range(1 << len(positions)):
+        chars = list(term)
+        for bit, i in enumerate(positions):
+            if mask >> bit & 1:
+                chars[i] = f"\\u{ord(term[i]):04x}"
+        out.add("".join(chars))
+    return out
 
 
-FORBIDDEN = tuple(_LITERAL) + tuple(_escaped(t) for t in _LITERAL if _escaped(t) != t)
+FORBIDDEN = tuple(sorted({s for t in _LITERAL for s in _spellings(t)}))
 
 
 def _files():
