@@ -176,6 +176,10 @@ class EGuideResponse(APIModel):
 
     ai_status: AiStatus = AiStatus.DISABLED
 
+    #: Nonce of the background pass allowed to overwrite this guide; None when no pass is pending.
+
+    ai_run_id: str | None = None
+
 
 
 EGuide = EGuideResponse

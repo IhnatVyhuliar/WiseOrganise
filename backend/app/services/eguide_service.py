@@ -5,6 +5,7 @@ model context in ai_context. Keep this module free of either.
 """
 from __future__ import annotations
 import logging
+from uuid import uuid4
 from copy import deepcopy
 from typing import Any
 from ..mocks.knowledge_mocks import CONTRACT_CLAUSES, GREENWASHING_RISKS
@@ -41,15 +42,18 @@ def compile_eguide(event: dict[str, Any]) -> EGuideResponse:
     """Store and return the base guide now; Gemini refines its text in the background."""
     ai_status = AiStatus.IN_PROGRESS if settings.gemini_enabled else AiStatus.DISABLED
     guide = base_eguide(event, ai_status)
+    run_id = uuid4().hex if ai_status is AiStatus.IN_PROGRESS else None
+    guide.ai_run_id = run_id
     event["eguide"] = guide.model_dump()
     event["status"] = EventStatus.GUIDE_READY
     save_event(event)
     if ai_status is AiStatus.IN_PROGRESS:
         try:
-            submit_eguide_job(event["id"])
+            submit_eguide_job(event["id"], run_id)
         except Exception:
             logger.warning("Could not schedule the Gemini pass", exc_info=True)
             guide.ai_status = AiStatus.FAILED
+            guide.ai_run_id = None
             event["eguide"] = guide.model_dump()
             save_event(event)
     return guide

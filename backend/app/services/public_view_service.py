@@ -2,7 +2,15 @@
 from __future__ import annotations
 from typing import Any
 from ..schemas.public import PublicEventHeader, PublicEventView
-from .eguide_service import base_eguide as _build_guide  # deterministic: no save, no model call
+from ..schemas import EGuideResponse
+from .eguide_service import base_eguide
+
+
+def _build_guide(event: dict[str, Any]) -> EGuideResponse:
+    """The stored guide when there is one, else the base guide in memory: no save, no model call."""
+    if event.get("eguide"):
+        return EGuideResponse.model_validate(event["eguide"])
+    return base_eguide(event)
 
 
 def build_public_view(event: dict[str, Any]) -> PublicEventView:

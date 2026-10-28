@@ -19,9 +19,13 @@ logger = logging.getLogger(__name__)
 _executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="eguide-ai")
 
 
-def submit_eguide_job(event_id: str) -> None:
-    """Schedule the Gemini pass for an event; returns immediately."""
-    _executor.submit(run_eguide_job, event_id)
+def submit_eguide_job(event_id: str, run_id: str) -> None:
+    """Schedule the Gemini pass for an event; returns immediately.
+
+    ``run_id`` is the nonce stored on the guide: only the job holding the
+    guide's current nonce may overwrite it.
+    """
+    _executor.submit(run_eguide_job, event_id, run_id)
 
 
 def _carry_done_flags(generated: EGuideResponse, stored: dict[str, Any]) -> None:
@@ -34,23 +38,30 @@ def _carry_done_flags(generated: EGuideResponse, stored: dict[str, Any]) -> None
         role.completed_tasks = [task for task in completed.get(role.role, []) if task in role.tasks]
 
 
-def _mark_failed(event_id: str) -> None:
+def _owns_guide(event: dict[str, Any] | None, run_id: str) -> bool:
+    """True when the stored guide is still the one this job was started for."""
+    guide = (event or {}).get("eguide")
+    return bool(guide) and guide.get("ai_run_id") == run_id and guide.get("ai_status") == AiStatus.IN_PROGRESS.value
+
+
+def _mark_failed(event_id: str, run_id: str) -> None:
     """Record a failure; never raises, because a closed pool must not kill the worker silently."""
     try:
         event = get_event(event_id)
-        if event is None or not event.get("eguide") or event["eguide"].get("ai_status") != AiStatus.IN_PROGRESS.value:
+        if not _owns_guide(event, run_id):
             return
         event["eguide"]["ai_status"] = AiStatus.FAILED.value
+        event["eguide"]["ai_run_id"] = None
         save_event(event)
     except Exception:
         logger.warning("Could not record the failed AI pass for event %s", event_id, exc_info=True)
 
 
-def run_eguide_job(event_id: str) -> None:
+def run_eguide_job(event_id: str, run_id: str) -> None:
     """Compose the guide text with Gemini; on any failure keep the base guide."""
     try:
         event = get_event(event_id)
-        if event is None or not event.get("eguide"):
+        if not _owns_guide(event, run_id):
             return
         generated = generate_structured(
             task="generate_eguide",
@@ -62,7 +73,7 @@ def run_eguide_job(event_id: str) -> None:
         # The model call is slow: re-read, because the organizer may have edited
         # the event (which drops the guide) or ticked boxes in the meantime.
         event = get_event(event_id)
-        if event is None or not event.get("eguide") or event["eguide"].get("ai_status") != AiStatus.IN_PROGRESS.value:
+        if not _owns_guide(event, run_id):
             return
         impact = EmissionsSummary(**build_impact(event))
         generated.event_id = event_id
@@ -70,10 +81,11 @@ def run_eguide_job(event_id: str) -> None:
         generated.emissions_summary = impact
         generated.ustalenia = [Ustalenie.model_validate(item) for item in build_ustalenia(event)]
         generated.ai_status = AiStatus.READY
+        generated.ai_run_id = None
         _carry_done_flags(generated, event["eguide"])
         event["eguide"] = generated.model_dump()
         save_event(event)
     except Exception:
         # A model that drifts from the knowledge base must never reach the organizer.
         logger.warning("Gemini guide generation failed for event %s, keeping the base guide", event_id, exc_info=True)
-        _mark_failed(event_id)
+        _mark_failed(event_id, run_id)

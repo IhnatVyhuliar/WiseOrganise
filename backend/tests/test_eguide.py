@@ -131,24 +131,60 @@ def test_job_failure_keeps_the_base_guide_and_reports_nieudane(monkeypatch, clie
     assert {**guide, "aiStatus": None} == {**base, "aiStatus": None}
 
 
+def _capture_jobs(monkeypatch) -> list[tuple[str, str]]:
+    """Record submitted jobs instead of running them, so a test runs each one itself."""
+    submitted: list[tuple[str, str]] = []
+    monkeypatch.setattr("app.services.eguide_service.submit_eguide_job", lambda event_id, run_id: submitted.append((event_id, run_id)))
+    return submitted
+
+
+def _labels(client, event_id: str) -> list[str]:
+    return [i["label"] for i in client.get(f"/api/v1/events/{event_id}/eguide").json()["organizerChecklist"]]
+
+
 def test_job_discards_its_result_when_the_guide_was_rebuilt_meanwhile(monkeypatch, client, gemini_on):
     event_id = _create(client)
-    started, release = threading.Event(), threading.Event()
+    submitted = _capture_jobs(monkeypatch)
+    client.post(f"/api/v1/events/{event_id}/eguide")
 
-    def slow(**kw):
-        started.set()
-        release.wait(2)
+    def edit_during_the_call(**kw):
+        client.patch(f"/api/v1/events/{event_id}/needed-areas", json={"neededAreas": ["dojazd"]})
         return _model_guide(event_id, "stale AI text")
 
-    monkeypatch.setattr(ai_jobs, "generate_structured", slow)
-    client.post(f"/api/v1/events/{event_id}/eguide")
-    assert started.wait(2)
+    monkeypatch.setattr(ai_jobs, "generate_structured", edit_during_the_call)
+    ai_jobs.run_eguide_job(*submitted[0])
+    assert "stale AI text" not in _labels(client, event_id)
+    assert client.get(f"/api/v1/events/{event_id}/eguide").json()["aiStatus"] == "wyłączone"
+
+
+def test_a_stale_job_cannot_overwrite_the_guide_of_a_newer_generate(monkeypatch, client, gemini_on):
+    event_id = _create(client)
+    submitted = _capture_jobs(monkeypatch)
+    client.post(f"/api/v1/events/{event_id}/eguide")  # job A
+    in_a, release_a = threading.Event(), threading.Event()
+    holder: dict[str, threading.Thread] = {}
+
+    def model(**kw):
+        if threading.current_thread() is holder["a"]:
+            in_a.set()
+            assert release_a.wait(2)
+            return _model_guide(event_id, "A text (old event)")
+        return _model_guide(event_id, "B text")
+
+    monkeypatch.setattr(ai_jobs, "generate_structured", model)
+    holder["a"] = threading.Thread(target=ai_jobs.run_eguide_job, args=submitted[0])
+    holder["a"].start()
+    assert in_a.wait(2)
     client.patch(f"/api/v1/events/{event_id}/needed-areas", json={"neededAreas": ["dojazd"]})
-    release.set()
-    time.sleep(0.3)
+    client.post(f"/api/v1/events/{event_id}/eguide")  # job B
+    assert submitted[1][1] != submitted[0][1]
+    ai_jobs.run_eguide_job(*submitted[1])
+    release_a.set()
+    holder["a"].join(2)  # A finishes last
+    assert not holder["a"].is_alive()
     guide = client.get(f"/api/v1/events/{event_id}/eguide").json()
-    assert all(i["label"] != "stale AI text" for i in guide["organizerChecklist"])
-    assert guide["aiStatus"] == "wyłączone"
+    assert guide["aiStatus"] == "gotowe"
+    assert guide["organizerChecklist"][0]["label"] == "B text"
 
 
 def test_a_closed_pool_in_the_job_is_a_failure_not_a_crash(monkeypatch, client, gemini_on):
@@ -159,7 +195,7 @@ def test_a_closed_pool_in_the_job_is_a_failure_not_a_crash(monkeypatch, client, 
         raise RuntimeError("the pool is closed")
 
     monkeypatch.setattr(ai_jobs, "get_event", closed)
-    ai_jobs.run_eguide_job(event_id)  # must not raise
+    ai_jobs.run_eguide_job(event_id, "any-run")  # must not raise
 
 
 def test_the_public_view_is_read_only_and_never_calls_the_model(monkeypatch, client, gemini_on):
@@ -178,3 +214,16 @@ def test_the_public_view_is_read_only_and_never_calls_the_model(monkeypatch, cli
     assert r.status_code == 200, r.text
     after = event_repo.get_event(event_id)
     assert after["eguide"] == before["eguide"] and after["status"] == before["status"]
+
+
+def test_the_public_view_prefers_the_stored_guide(client):
+    from app.repositories import event_repo
+
+    event_id = _create(client)
+    slug = client.get(f"/api/v1/events/{event_id}").json()["slug"]
+    client.post(f"/api/v1/events/{event_id}/eguide")
+    event = event_repo.get_event(event_id)
+    event["eguide"]["organizer_checklist"][0]["label"] = "STORED GUIDE TEXT"
+    event_repo.save_event(event)
+    body = client.get(f"/api/v1/public/events/{slug}").json()
+    assert body["organizerChecklist"][0]["label"] == "STORED GUIDE TEXT"
