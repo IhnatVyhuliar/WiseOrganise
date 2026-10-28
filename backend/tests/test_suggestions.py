@@ -124,3 +124,56 @@ def test_each_unavailable_path_keeps_its_polish_message(monkeypatch, client, gem
     monkeypatch.setattr(type(settings), "gemini_enabled", property(lambda self: False))
     r = client.post(f"/api/v1/events/{_create(client)}/suggest-areas")
     assert r.json()["message"] == suggestion_service._NO_MODEL
+
+
+def test_a_write_during_the_model_call_survives_the_cache_write(monkeypatch, client, gemini_on):
+    event_id = _create(client)
+
+    def fake(**kwargs):
+        concurrent = event_repo.get_event(event_id)
+        concurrent["eguide_run_id"] = "sentinel"
+        event_repo.save_event(concurrent)
+        return AreaSuggestionResponse(
+            available=True, message="x", suggestions=[AreaSuggestion(area_id="dojazd", reason="Powod.")]
+        )
+
+    monkeypatch.setattr(suggestion_service, "generate_structured", fake)
+    assert client.post(f"/api/v1/events/{event_id}/suggest-areas").json()["available"] is True
+    stored = event_repo.get_event(event_id)
+    assert stored["eguide_run_id"] == "sentinel"
+    assert stored["suggestion_cache"]["hash"]
+
+
+def test_a_corrupt_cache_is_ignored_and_repaired(monkeypatch, client, gemini_on):
+    calls = _fake_model(monkeypatch)
+    event_id = _create(client)
+    event = event_repo.get_event(event_id)
+    event["suggestion_cache"] = {"hash": facts_hash(event_facts(event)), "response": {"bogus": 1}}
+    event_repo.save_event(event)
+    r = client.post(f"/api/v1/events/{event_id}/suggest-areas")
+    assert r.status_code == 200 and r.json()["available"] is True and calls.n == 1
+    client.post(f"/api/v1/events/{event_id}/suggest-areas")
+    assert calls.n == 1  # repaired: the second call is a hit
+
+
+def test_a_failing_cache_write_still_returns_the_answer(monkeypatch, client, gemini_on):
+    _fake_model(monkeypatch)
+    event_id = _create(client)
+
+    def broken(event):
+        raise RuntimeError("db down")
+
+    monkeypatch.setattr(suggestion_service, "save_event", broken)
+    r = client.post(f"/api/v1/events/{event_id}/suggest-areas")
+    assert r.status_code == 200 and r.json()["available"] is True
+
+
+def test_a_cache_hit_is_served_even_when_gemini_is_disabled(monkeypatch, client, gemini_on):
+    from app.core.config import settings
+
+    _fake_model(monkeypatch)
+    event_id = _create(client)
+    client.post(f"/api/v1/events/{event_id}/suggest-areas")
+    monkeypatch.setattr(type(settings), "gemini_enabled", property(lambda self: False))
+    body = client.post(f"/api/v1/events/{event_id}/suggest-areas").json()
+    assert body["available"] is True and len(body["suggestions"]) == 2

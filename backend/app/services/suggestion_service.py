@@ -14,7 +14,7 @@ from ..mocks.knowledge_mocks import EVENT_AREAS
 from ..schemas import AreaSuggestion, AreaSuggestionResponse
 from ..core.config import settings
 from ..integrations.gemini_client import generate_structured
-from ..repositories.event_repo import save_event
+from ..repositories.event_repo import get_event, save_event
 from .ai_context import build_area_suggestion_prompt, event_facts, facts_hash
 
 logger = logging.getLogger(__name__)
@@ -42,12 +42,16 @@ def suggest_areas(event: dict[str, Any]) -> AreaSuggestionResponse:
         return AreaSuggestionResponse(available=False, message=_NO_DESCRIPTION)
     try:
         digest = facts_hash(event_facts(event))
-        cached = event.get("suggestion_cache")
-        if isinstance(cached, dict) and cached.get("hash") == digest:
-            return AreaSuggestionResponse.model_validate(cached["response"])
     except Exception:
         digest = None
-        logger.warning("Ignoring an unreadable suggestion cache", exc_info=True)
+        logger.warning("Could not fingerprint the event, skipping the suggestion cache", exc_info=True)
+    cached = event.get("suggestion_cache")
+    if digest is not None and isinstance(cached, dict) and cached.get("hash") == digest:
+        try:
+            return AreaSuggestionResponse.model_validate(cached["response"])
+        except Exception:
+            # Only the stored entry is bad: keep the digest so the next good result overwrites it.
+            logger.warning("Ignoring an unreadable suggestion cache", exc_info=True)
     if not settings.gemini_enabled:
         return AreaSuggestionResponse(available=False, message=_NO_MODEL)
     try:
@@ -81,8 +85,12 @@ def suggest_areas(event: dict[str, Any]) -> AreaSuggestionResponse:
     response = AreaSuggestionResponse(available=True, message=_OK, suggestions=kept)
     if digest is not None:
         try:
-            event["suggestion_cache"] = {"hash": digest, "response": response.model_dump(by_alias=False)}
-            save_event(event)
+            # The model call can take seconds; re-read so a guide, nonce or edit stored
+            # meanwhile is not overwritten by this request's stale copy.
+            fresh = get_event(event["id"])
+            if fresh is not None:
+                fresh["suggestion_cache"] = {"hash": digest, "response": response.model_dump(by_alias=False)}
+                save_event(fresh)
         except Exception:
             logger.warning("Could not store the area suggestion cache", exc_info=True)
     return response
