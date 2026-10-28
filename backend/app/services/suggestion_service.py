@@ -14,7 +14,8 @@ from ..mocks.knowledge_mocks import EVENT_AREAS
 from ..schemas import AreaSuggestion, AreaSuggestionResponse
 from ..core.config import settings
 from ..integrations.gemini_client import generate_structured
-from .ai_context import build_area_suggestion_prompt
+from ..repositories.event_repo import save_event
+from .ai_context import build_area_suggestion_prompt, event_facts, facts_hash
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,14 @@ def suggest_areas(event: dict[str, Any]) -> AreaSuggestionResponse:
     description = str(event.get("raw_description") or "").strip()
     if not description:
         return AreaSuggestionResponse(available=False, message=_NO_DESCRIPTION)
+    try:
+        digest = facts_hash(event_facts(event))
+        cached = event.get("suggestion_cache")
+        if isinstance(cached, dict) and cached.get("hash") == digest:
+            return AreaSuggestionResponse.model_validate(cached["response"])
+    except Exception:
+        digest = None
+        logger.warning("Ignoring an unreadable suggestion cache", exc_info=True)
     if not settings.gemini_enabled:
         return AreaSuggestionResponse(available=False, message=_NO_MODEL)
     try:
@@ -67,4 +76,13 @@ def suggest_areas(event: dict[str, Any]) -> AreaSuggestionResponse:
     ]
     if not kept:
         return AreaSuggestionResponse(available=False, message=_FAILED)
-    return AreaSuggestionResponse(available=True, message=_OK, suggestions=kept)
+    order = {area["id"]: position for position, area in enumerate(EVENT_AREAS)}
+    kept.sort(key=lambda item: order[str(getattr(item.area_id, "value", item.area_id))])
+    response = AreaSuggestionResponse(available=True, message=_OK, suggestions=kept)
+    if digest is not None:
+        try:
+            event["suggestion_cache"] = {"hash": digest, "response": response.model_dump(by_alias=False)}
+            save_event(event)
+        except Exception:
+            logger.warning("Could not store the area suggestion cache", exc_info=True)
+    return response

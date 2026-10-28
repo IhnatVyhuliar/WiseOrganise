@@ -17,6 +17,7 @@ The e-guide prompt also carries the set of checklist ids it supplied, so
 """
 from __future__ import annotations
 from pathlib import Path
+import hashlib
 import json
 from typing import Any, Iterable
 
@@ -57,6 +58,35 @@ def prompt_text(name: str) -> str:
 
 def _event_block(event: dict[str, Any]) -> str:
     return f"{_EVENT_HEADER}\n{json.dumps(event, default=str, ensure_ascii=False)}"
+
+
+_FACT_KEYS = (
+    "title",
+    "raw_description",
+    "event_date",
+    "attendees",
+    "location",
+    "participant_origins",
+    "starting_mode",
+)
+
+
+def event_facts(event: dict[str, Any]) -> dict[str, Any]:
+    """The only event fields the area suggestion depends on.
+
+    Exactly seven keys, so the stored guide, timestamps, the id and the
+    suggestion cache can neither reach the prompt nor change its hash.
+    """
+    facts = {key: event.get(key) for key in _FACT_KEYS}
+    event_date = facts["event_date"]
+    if event_date is not None and not isinstance(event_date, str):
+        facts["event_date"] = event_date.isoformat()
+    return facts
+
+
+def facts_hash(facts: dict[str, Any]) -> str:
+    """Stable fingerprint of :func:`event_facts`."""
+    return hashlib.sha256(json.dumps(facts, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
 
 
 def _knowledge_block(sections: dict[str, Any]) -> str:
@@ -132,7 +162,7 @@ def build_area_suggestion_prompt(event: dict[str, Any]) -> GroundedPrompt:
     allowed_ids = [area["id"] for area in available]
     knowledge = _knowledge_block({"AVAILABLE_AREAS": available, "ALLOWED_AREA_IDS": allowed_ids})
     return GroundedPrompt(
-        f"{prompt_text('suggest_areas.md')}\n{knowledge}\n{_event_block(event)}",
+        f"{prompt_text('suggest_areas.md')}\n{knowledge}\n{_EVENT_HEADER}\n{json.dumps(event_facts(event), ensure_ascii=False, sort_keys=True)}",
         allowed_ids,
     )
 
