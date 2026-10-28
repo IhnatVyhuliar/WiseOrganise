@@ -43,8 +43,8 @@ def compile_eguide(event: dict[str, Any]) -> EGuideResponse:
     ai_status = AiStatus.IN_PROGRESS if settings.gemini_enabled else AiStatus.DISABLED
     guide = base_eguide(event, ai_status)
     run_id = uuid4().hex if ai_status is AiStatus.IN_PROGRESS else None
-    guide.ai_run_id = run_id
     event["eguide"] = guide.model_dump()
+    event["eguide_run_id"] = run_id  # nonce of the one background pass allowed to overwrite this guide
     event["status"] = EventStatus.GUIDE_READY
     save_event(event)
     if ai_status is AiStatus.IN_PROGRESS:
@@ -53,7 +53,7 @@ def compile_eguide(event: dict[str, Any]) -> EGuideResponse:
         except Exception:
             logger.warning("Could not schedule the Gemini pass", exc_info=True)
             guide.ai_status = AiStatus.FAILED
-            guide.ai_run_id = None
+            event["eguide_run_id"] = None
             event["eguide"] = guide.model_dump()
             save_event(event)
     return guide

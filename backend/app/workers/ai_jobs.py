@@ -40,8 +40,10 @@ def _carry_done_flags(generated: EGuideResponse, stored: dict[str, Any]) -> None
 
 def _owns_guide(event: dict[str, Any] | None, run_id: str) -> bool:
     """True when the stored guide is still the one this job was started for."""
-    guide = (event or {}).get("eguide")
-    return bool(guide) and guide.get("ai_run_id") == run_id and guide.get("ai_status") == AiStatus.IN_PROGRESS.value
+    if not event or event.get("eguide_run_id") != run_id:
+        return False
+    guide = event.get("eguide")
+    return bool(guide) and guide.get("ai_status") == AiStatus.IN_PROGRESS.value
 
 
 def _mark_failed(event_id: str, run_id: str) -> None:
@@ -51,7 +53,7 @@ def _mark_failed(event_id: str, run_id: str) -> None:
         if not _owns_guide(event, run_id):
             return
         event["eguide"]["ai_status"] = AiStatus.FAILED.value
-        event["eguide"]["ai_run_id"] = None
+        event["eguide_run_id"] = None
         save_event(event)
     except Exception:
         logger.warning("Could not record the failed AI pass for event %s", event_id, exc_info=True)
@@ -81,9 +83,9 @@ def run_eguide_job(event_id: str, run_id: str) -> None:
         generated.emissions_summary = impact
         generated.ustalenia = [Ustalenie.model_validate(item) for item in build_ustalenia(event)]
         generated.ai_status = AiStatus.READY
-        generated.ai_run_id = None
         _carry_done_flags(generated, event["eguide"])
         event["eguide"] = generated.model_dump()
+        event["eguide_run_id"] = None
         save_event(event)
     except Exception:
         # A model that drifts from the knowledge base must never reach the organizer.

@@ -178,10 +178,11 @@ def test_a_stale_job_cannot_overwrite_the_guide_of_a_newer_generate(monkeypatch,
     client.patch(f"/api/v1/events/{event_id}/needed-areas", json={"neededAreas": ["dojazd"]})
     client.post(f"/api/v1/events/{event_id}/eguide")  # job B
     assert submitted[1][1] != submitted[0][1]
-    ai_jobs.run_eguide_job(*submitted[1])
     release_a.set()
-    holder["a"].join(2)  # A finishes last
+    holder["a"].join(2)  # A finishes while B's guide is still "w toku": only the nonce can reject it
     assert not holder["a"].is_alive()
+    assert "A text (old event)" not in _labels(client, event_id)
+    ai_jobs.run_eguide_job(*submitted[1])
     guide = client.get(f"/api/v1/events/{event_id}/eguide").json()
     assert guide["aiStatus"] == "gotowe"
     assert guide["organizerChecklist"][0]["label"] == "B text"
@@ -227,3 +228,18 @@ def test_the_public_view_prefers_the_stored_guide(client):
     event_repo.save_event(event)
     body = client.get(f"/api/v1/public/events/{slug}").json()
     assert body["organizerChecklist"][0]["label"] == "STORED GUIDE TEXT"
+
+
+def test_the_run_nonce_is_not_part_of_the_api_contract(client):
+    assert "aiRunId" not in client.get("/openapi.json").text
+    assert "ai_run_id" not in client.get("/openapi.json").text
+
+
+def test_the_nonce_lives_on_the_event_record(monkeypatch, client, gemini_on):
+    from app.repositories import event_repo
+
+    event_id = _create(client)
+    submitted = _capture_jobs(monkeypatch)
+    body = client.post(f"/api/v1/events/{event_id}/eguide").json()
+    assert "aiRunId" not in body
+    assert event_repo.get_event(event_id)["eguide_run_id"] == submitted[0][1]
