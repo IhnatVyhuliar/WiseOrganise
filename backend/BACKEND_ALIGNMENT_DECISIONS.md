@@ -36,7 +36,7 @@ All routes are under `/api/v1` and use the process-local `backend/app/repositori
 
 ## Contract changes driven by frontend and PDF
 
-- **DEC-01** `EventCreate` defaults to the University of Lodz pilot, approximately 20 km radius, rail/electric-bus transport, suggested start time, participant origins, budget, and `needs_venue_help` starting mode. See `app/schemas/event.py` and `PilotContext`.
+- **DEC-01** `EventCreate` defaults to a neutral event context, approximately 20 km radius, rail/electric-bus transport, suggested start time, participant origins, budget, and `needs_venue_help` starting mode. See `app/schemas/event.py` and `PilotContext`.
 - **DEC-02** Pydantic responses serialize snake_case fields as camelCase aliases (`providerQuestions`, `selectedOptions`, `eventDate`, `needsVenueHelp`, etc.) while accepting both forms on input. This lets the frontend consume JSON without transformation.
 - **DEC-03** `EventArea` and `OptionLevel` mirror the frontend fields: `id`, `name`, `stage`, `lead`, `levels`, `provider_questions`, `note`; each level has `level`, `label`, `description`, `why`, `cost`, `tags`, `use_ai_suggestions`, and `six_r`. See `app/schemas/options.py`.
 - **DEC-04** `knowledge_mocks.py` contains exactly seven areas and exactly three Polish levels per area. It encodes the strict `Przemyśl -> Rezygnuj -> Ograniczaj -> Używaj ponownie -> Naprawiaj -> Recykling` hierarchy, locality, seasonality, circularity, employment on an employment contract, and reusable tableware above biodegradable disposable ware.
@@ -55,7 +55,7 @@ All routes are under `/api/v1` and use the process-local `backend/app/repositori
 ## File-level decision log
 
 - `app/schemas/enums.py`: added lifecycle, area, 6R, and cost enums; repaired Polish values.
-- `app/schemas/event.py`: replaced the old required-only event form with UŁ-aware defaults and pilot context.
+- `app/schemas/event.py`: replaced the old required-only event form with neutral defaults and pilot context.
 - `app/schemas/options.py`: added typed area, tier, and selection contracts.
 - `app/schemas/criteria.py`: added neutral criteria matrix and supplier questions.
 - `app/schemas/eguide.py`: added dual checklists and impact summary while retaining compatibility projections.

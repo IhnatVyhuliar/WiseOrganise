@@ -1,4 +1,4 @@
-"""Event initialization schemas aligned with the UŁ pilot and frontend creator."""
+"""Event initialization schemas aligned with the event creator."""
 
 from __future__ import annotations
 
@@ -16,11 +16,11 @@ class PilotContext(APIModel):
 
     """Location-sensitive transport context for the pilot scenario."""
 
-    city: str = "Uniwersytet \u0141ódzki, \u0141ód\u017a"
+    city: str = "Miasto wydarzenia"
 
     radius_km: float = Field(default=20, gt=0, le=100)
 
-    rail_connections: list[str] = Field(default_factory=lambda: ["Po\u0142\u0105czenia kolejowe do \u0141odzi Fabrycznej", "Godzina startu dopasowana do przyjazdu poci\u0105g\u00f3w"])
+    rail_connections: list[str] = Field(default_factory=lambda: ["Po\u0142\u0105czenia kolejowe do miasta wydarzenia", "Godzina startu dopasowana do przyjazdu poci\u0105g\u00f3w"])
 
     electric_bus_connections: list[str] = Field(default_factory=lambda: ["Autobus elektryczny z dworca", "Przystanki przy miejscu wydarzenia"])
 
@@ -36,11 +36,11 @@ class EventCreate(APIModel):
 
     """Payload used to initialize an event planning workspace."""
 
-    title: str = Field(default="Wydarzenie na UŁ", min_length=1, max_length=200, validation_alias=AliasChoices("title", "name"))
+    title: str = Field(default="Wydarzenie", min_length=1, max_length=200, validation_alias=AliasChoices("title", "name"))
 
     event_type: str = Field(default="Konferencja", min_length=1, max_length=100)
 
-    raw_description: str = Field(default="Zr\u00f3wnowa\u017cone wydarzenie w pilota\u017cu U\u0141.", max_length=5000, validation_alias=AliasChoices("raw_description", "rawDescription", "description"))
+    raw_description: str = Field(default="Zr\u00f3wnowa\u017cone wydarzenie.", max_length=5000, validation_alias=AliasChoices("raw_description", "rawDescription", "description"))
 
     needs_venue_help: bool = False
 
@@ -48,7 +48,7 @@ class EventCreate(APIModel):
 
     budget: float = Field(default=0, ge=0)
 
-    location: str = Field(default="Uniwersytet \u0141ódzki, \u0141ód\u017a", max_length=300)
+    location: str = Field(default="Miejsce wydarzenia", max_length=300)
 
     address: str | None = Field(default=None, max_length=500)
 
@@ -60,7 +60,7 @@ class EventCreate(APIModel):
 
     end_at: datetime | None = None
 
-    participant_origins: str = "\u0141\u00f3d\u017a i okolice"
+    participant_origins: str = "Miasto wydarzenia i okolice"
 
     transit_profile: list[str] = Field(default_factory=lambda: ["kolej", "autobusy elektryczne"])
 
