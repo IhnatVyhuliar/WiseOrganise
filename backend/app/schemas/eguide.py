@@ -138,6 +138,24 @@ class ContractClause(APIModel):
 
 
 
+class Ustalenie(APIModel):
+
+    """One arrangement: the level the organizer chose for a lifecycle area."""
+
+    area_id: AreaId
+
+    area_name: str
+
+    level: int
+
+    level_label: str
+
+    justification: str
+
+    cost_effect: str
+
+
+
 class EGuideResponse(APIModel):
 
     event_id: str
@@ -155,6 +173,8 @@ class EGuideResponse(APIModel):
     timeline_tasks: list[TimelineTask] = Field(default_factory=list)
 
     contract_clauses_and_questions: list[ContractClause] = Field(default_factory=list)
+
+    ustalenia: list[Ustalenie] = Field(default_factory=list)
 
 
 

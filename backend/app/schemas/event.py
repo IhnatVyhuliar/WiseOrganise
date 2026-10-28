@@ -138,6 +138,10 @@ class EventResponse(EventCreate):
 
     id: str
 
+    slug: str
+
+    share_url: str
+
     status: EventStatus
 
     created_at: datetime

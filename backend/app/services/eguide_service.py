@@ -9,12 +9,13 @@ from copy import deepcopy
 from typing import Any
 from ..mocks.knowledge_mocks import CONTRACT_CLAUSES, GREENWASHING_RISKS
 from ..repositories.event_repo import save_event
-from ..schemas import EGuideResponse, EmissionsSummary, OrganizerChecklistItem, TeamRoleChecklist, TimelineTask, EventStatus
+from ..schemas import EGuideResponse, EmissionsSummary, OrganizerChecklistItem, TeamRoleChecklist, TimelineTask, Ustalenie, EventStatus
 from ..core.config import settings
 from ..integrations.gemini_client import generate_structured
 from .ai_context import build_eguide_prompt
 from .checklist_builder import build_organizer_checklist, build_team_checklists
 from .impact_service import build_impact
+from .ustalenia_service import build_ustalenia
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,7 @@ logger = logging.getLogger(__name__)
 def compile_eguide(event: dict[str, Any]) -> EGuideResponse:
     """Compile organizer and team checklists without recommending companies."""
     impact = EmissionsSummary(**build_impact(event))
+    ustalenia = build_ustalenia(event)
     if settings.gemini_enabled:
         try:
             generated = generate_structured(
@@ -38,6 +40,7 @@ def compile_eguide(event: dict[str, Any]) -> EGuideResponse:
         else:
             generated.impact_summary = impact
             generated.emissions_summary = impact
+            generated.ustalenia = [Ustalenie.model_validate(item) for item in ustalenia]
             event["eguide"] = generated.model_dump()
             event["status"] = EventStatus.GUIDE_READY
             save_event(event)
@@ -53,6 +56,7 @@ def compile_eguide(event: dict[str, Any]) -> EGuideResponse:
         greenwashing_risk_matrix=deepcopy(GREENWASHING_RISKS),
         timeline_tasks=[TimelineTask(milestone=item["milestone"], task=item["label"]) for item in organizer],
         contract_clauses_and_questions=deepcopy(CONTRACT_CLAUSES),
+        ustalenia=[Ustalenie.model_validate(item) for item in ustalenia],
     )
     event["eguide"] = guide.model_dump()
     event["status"] = EventStatus.GUIDE_READY

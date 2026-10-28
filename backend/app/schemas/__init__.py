@@ -47,6 +47,7 @@ from .eguide import (  # noqa: E402
     RiskFlag,
     RiskMatrix,
     TimelineTask,
+    Ustalenie,
 )
 from .enums import (  # noqa: E402
     AnswerType,
@@ -61,6 +62,7 @@ from .enums import (  # noqa: E402
 from .event import EventCreate, EventPatch, EventResponse, EventUpdate, NeededAreasUpdate, PilotContext  # noqa: E402
 from .options import AreaOptionsResponse, EventArea, OptionLevel, OptionSelection, OptionSelectionPayload, OptionSelectionResponse  # noqa: E402
 from .criteria import AreaCriteria, AreaCriterion, AreaVerification, CriteriaResponse, VendorCriterion  # noqa: E402
+from .public import PublicEventHeader, PublicEventView  # noqa: E402
 from .suggestions import AreaSuggestion, AreaSuggestionResponse  # noqa: E402
 
 __all__ = [
@@ -70,5 +72,5 @@ __all__ = [
     "ChecklistResponse", "ChecklistUpdatePayload", "ChecklistPatch", "Weights",
     "EmissionsSummary", "EcoMotivator",
     "GreenwashingRisk", "RiskFlag", "RiskMatrix", "TimelineTask", "ContractClause", "ChecklistDoneUpdate",
-    "EGuide", "EGuideResponse", "ImpactSummary", "OrganizerChecklistItem", "TeamRoleChecklist", "EventArea", "OptionLevel", "AreaOptionsResponse", "OptionSelection", "OptionSelectionPayload", "OptionSelectionResponse", "VendorCriterion", "AreaVerification", "CriteriaResponse",
+    "EGuide", "EGuideResponse", "ImpactSummary", "OrganizerChecklistItem", "TeamRoleChecklist", "Ustalenie", "EventArea", "OptionLevel", "AreaOptionsResponse", "OptionSelection", "OptionSelectionPayload", "OptionSelectionResponse", "VendorCriterion", "AreaVerification", "CriteriaResponse", "PublicEventHeader", "PublicEventView",
 ]

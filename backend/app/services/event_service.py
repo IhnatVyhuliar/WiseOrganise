@@ -25,7 +25,10 @@ def public_event(event: dict[str, Any]) -> EventResponse:
     """Serialize an internal event record to its public response model."""
 
     fields = set(EventResponse.model_fields)
-    return EventResponse.model_validate({key: value for key, value in event.items() if key in fields})
+    data = {key: value for key, value in event.items() if key in fields}
+    # share_url is derived from the slug, never stored on the record.
+    data["share_url"] = f"{settings.public_base_url.rstrip('/')}/w/{event['slug']}"
+    return EventResponse.model_validate(data)
 
 
 def create_event(payload: EventCreate) -> EventResponse:

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import secrets
+import string
 from contextlib import contextmanager
 from copy import deepcopy
 from datetime import date, datetime, timezone
@@ -122,6 +124,21 @@ def _upsert(event: dict[str, Any]) -> None:
         )
 
 
+_SLUG_ALPHABET = string.ascii_lowercase + string.digits
+_SLUG_LENGTH = 8
+_SLUG_ATTEMPTS = 5
+
+
+def _new_slug() -> str:
+    """Return an unused short slug, retrying a few times on collision."""
+
+    for _ in range(_SLUG_ATTEMPTS):
+        candidate = "".join(secrets.choice(_SLUG_ALPHABET) for _ in range(_SLUG_LENGTH))
+        if not slug_exists(candidate):
+            return candidate
+    raise RuntimeError("Could not allocate a unique event slug")
+
+
 def create_event_record(data: dict[str, Any]) -> dict[str, Any]:
     """Create and persist a new draft event."""
 
@@ -131,6 +148,7 @@ def create_event_record(data: dict[str, Any]) -> dict[str, Any]:
     event.update(
         {
             "id": event_id,
+            "slug": _new_slug(),
             "status": "draft",
             "created_at": now,
             "updated_at": now,

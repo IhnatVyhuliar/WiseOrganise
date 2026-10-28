@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     database_url: str = Field(
         default="postgresql://wiseorganise:wiseorganise@db:5432/wiseorganise", validation_alias="DATABASE_URL"
     )
+    public_base_url: str = Field(default="https://wiseorganise.reachit.space", validation_alias="PUBLIC_BASE_URL")
     db_connect_retries: int = Field(default=30, validation_alias="DB_CONNECT_RETRIES")
     db_connect_delay_seconds: float = Field(default=2.0, validation_alias="DB_CONNECT_DELAY_SECONDS")
 
