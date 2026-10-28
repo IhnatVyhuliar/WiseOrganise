@@ -129,13 +129,13 @@ Two things to know:
 - The uvicorn module path differs by context: `backend.app.main:app` from the repo root, `app.main:app` inside the Docker image (where `backend/` is the working directory).
 - **`npm run dev` does not type-check** — Vite only strips types. Type errors appear for the first time in `npm run build` (`tsc -b && vite build`). Run that before assuming a frontend change is good.
 
-The backend has a pytest suite of 56 tests in `backend/tests/`; it needs a reachable PostgreSQL. The intended command is:
+The backend has a pytest suite of 63 tests in `backend/tests/`; it needs a reachable PostgreSQL. The intended command is:
 
 ```bash
 docker compose run --rm backend pytest tests/ -v
 ```
 
-**This exact command has never been executed:** Docker was unavailable while the suite was written, so the compose and Dockerfile changes were reviewed by reading only, and every run used a locally provisioned PostgreSQL (set `DATABASE_URL` to it and run `pytest tests/` from `backend/`; without a reachable database the whole session skips). There is no linter and no formatter, and the frontend has no tests. `python -m compileall backend/app` is a quick syntax check.
+**This exact command has never been executed:** Docker was unavailable while the suite was written, so the compose and Dockerfile changes were reviewed by reading only, and every run used a locally provisioned PostgreSQL (set `DATABASE_URL` to it and run `pytest tests/` from `backend/`; an unreachable database fails the run, and the schema-only guards run without one). There is no linter and no formatter, and the frontend has no tests. `python -m compileall backend/app` is a quick syntax check.
 
 ---
 
