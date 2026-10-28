@@ -6,7 +6,7 @@ from pydantic import Field, model_validator
 
 from . import APIModel
 
-from .enums import AreaId, FlagColor, Milestone
+from .enums import AiStatus, AreaId, FlagColor, Milestone
 
 
 
@@ -173,6 +173,8 @@ class EGuideResponse(APIModel):
     contract_clauses_and_questions: list[ContractClause] = Field(default_factory=list)
 
     ustalenia: list[Ustalenie] = Field(default_factory=list)
+
+    ai_status: AiStatus = AiStatus.DISABLED
 
 
 

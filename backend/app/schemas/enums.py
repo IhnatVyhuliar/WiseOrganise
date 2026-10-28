@@ -158,3 +158,16 @@ class Milestone(str, Enum):
 
     T_PLUS_7 = "T+7"
 
+
+
+class AiStatus(str, Enum):
+
+    """State of the optional Gemini pass over the base e-guide (values are user-facing Polish)."""
+
+    DISABLED = "wyłączone"
+
+    IN_PROGRESS = "w toku"
+
+    READY = "gotowe"
+
+    FAILED = "nieudane"

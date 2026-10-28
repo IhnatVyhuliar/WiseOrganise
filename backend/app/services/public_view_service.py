@@ -2,7 +2,7 @@
 from __future__ import annotations
 from typing import Any
 from ..schemas.public import PublicEventHeader, PublicEventView
-from .eguide_service import compile_eguide as _build_guide  # Task 4 repoints this one line.
+from .eguide_service import base_eguide as _build_guide  # deterministic: no save, no model call
 
 
 def build_public_view(event: dict[str, Any]) -> PublicEventView:

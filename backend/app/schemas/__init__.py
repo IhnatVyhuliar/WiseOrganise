@@ -50,6 +50,7 @@ from .eguide import (  # noqa: E402
     Ustalenie,
 )
 from .enums import (  # noqa: E402
+    AiStatus,
     AnswerType,
     AreaId, CostEffect, LifecycleStage, SixR,
     Category,
@@ -66,7 +67,7 @@ from .public import PublicEventHeader, PublicEventView  # noqa: E402
 from .suggestions import AreaSuggestion, AreaSuggestionResponse  # noqa: E402
 
 __all__ = [
-    "APIModel", "ChecklistValue", "EventStatus", "ChecklistCategory", "Category",
+    "APIModel", "ChecklistValue", "EventStatus", "AiStatus", "ChecklistCategory", "Category",
     "AnswerType", "AreaId", "CostEffect", "LifecycleStage", "SixR", "VerificationStatus", "FlagColor", "Milestone", "EventCreate",
     "EventUpdate", "EventPatch", "EventResponse", "NeededAreasUpdate", "PilotContext", "ChecklistItem", "ChecklistItemUpdate",
     "ChecklistResponse", "ChecklistUpdatePayload", "ChecklistPatch", "Weights",

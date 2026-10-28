@@ -129,10 +129,7 @@ def update_checklist_endpoint(event_id: str, payload: ChecklistUpdatePayload) ->
 def generate_eguide_endpoint(event_id: str) -> EGuideResponse:
     """Compile the final structured eco-guide."""
 
-    try:
-        return compile_eguide(get_event_or_404(event_id))
-    except LookupError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    return compile_eguide(get_event_or_404(event_id))
 
 
 @router.post("/{event_id}/suggest-areas", response_model=AreaSuggestionResponse)
@@ -159,8 +156,6 @@ def set_checklist_done_endpoint(event_id: str, payload: ChecklistDoneUpdate) -> 
 
     try:
         return EGuideResponse.model_validate(set_done(get_event_or_404(event_id), payload))
-    except LookupError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
     except KeyError as exc:
         raise HTTPException(status_code=404, detail="Checklist item not found") from exc
 
@@ -176,7 +171,4 @@ def impact_endpoint(event_id: str) -> EmissionsSummary:
 def get_eguide_endpoint(event_id: str) -> EGuideResponse:
     """Return a previously generated eco-guide."""
 
-    try:
-        return get_eguide(get_event_or_404(event_id))
-    except LookupError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    return get_eguide(get_event_or_404(event_id))
