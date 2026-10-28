@@ -135,7 +135,7 @@ The backend has a pytest suite of 63 tests in `backend/tests/`; it needs a reach
 docker compose run --rm backend pytest tests/ -v
 ```
 
-**Verified:** this command was run through Docker Compose against the `db` service and passes 63/63. It was written before Docker was available on the development machine, so it was reviewed by reading first; it has since been executed. You can also run it against any reachable PostgreSQL (set `DATABASE_URL` to it and run `pytest tests/` from `backend/`; an unreachable database fails the run, and the schema-only guards run without one). There is no linter and no formatter, and the frontend has no tests. `python -m compileall backend/app` is a quick syntax check.
+**Verified:** this command was run through Docker Compose against the `db` service and passes 63/63. It is safe to run against a live stack: the suite creates and uses a sibling `..._test` database (DEC-25), so it never touches the application's own data. It was written before Docker was available on the development machine, so it was reviewed by reading first; it has since been executed. You can also run it against any reachable PostgreSQL (set `DATABASE_URL` to it and run `pytest tests/` from `backend/`; an unreachable database fails the run, and the schema-only guards run without one). There is no linter and no formatter, and the frontend has no tests. `python -m compileall backend/app` is a quick syntax check.
 
 ---
 

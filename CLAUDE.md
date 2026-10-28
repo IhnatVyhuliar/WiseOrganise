@@ -36,7 +36,7 @@ These are the rules a well-meaning change is most likely to break. Do not violat
 
 ## Commands
 
-The backend has a pytest suite (63 tests in `backend/tests/`, needing PostgreSQL for all but the static guards); run it with `docker compose run --rm backend pytest tests/ -v` (verified, 63/63), or against any reachable PostgreSQL via `DATABASE_URL`. The suite forces mock AI, so an ambient `GEMINI_API_KEY` cannot make it fail or spend live calls. There is **no linter and no formatter** and no frontend test suite; do not guess at `eslint` or similar — they are not configured.
+The backend has a pytest suite (63 tests in `backend/tests/`, needing PostgreSQL for all but the static guards); run it with `docker compose run --rm backend pytest tests/ -v` (verified, 63/63), or against any reachable PostgreSQL via `DATABASE_URL`. The suite redirects itself to a sibling `..._test` database and creates it if needed, so it never truncates the application's data (DEC-25). The suite forces mock AI, so an ambient `GEMINI_API_KEY` cannot make it fail or spend live calls. There is **no linter and no formatter** and no frontend test suite; do not guess at `eslint` or similar — they are not configured.
 
 ```bash
 # Full stack (backend + frontend behind Caddy) on http://localhost:4540
