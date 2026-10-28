@@ -135,7 +135,7 @@ The backend has a pytest suite of 63 tests in `backend/tests/`; it needs a reach
 docker compose run --rm backend pytest tests/ -v
 ```
 
-**This exact command has never been executed:** Docker was unavailable while the suite was written, so the compose and Dockerfile changes were reviewed by reading only, and every run used a locally provisioned PostgreSQL (set `DATABASE_URL` to it and run `pytest tests/` from `backend/`; an unreachable database fails the run, and the schema-only guards run without one). There is no linter and no formatter, and the frontend has no tests. `python -m compileall backend/app` is a quick syntax check.
+**Verified:** this command was run through Docker Compose against the `db` service and passes 63/63. It was written before Docker was available on the development machine, so it was reviewed by reading first; it has since been executed. You can also run it against any reachable PostgreSQL (set `DATABASE_URL` to it and run `pytest tests/` from `backend/`; an unreachable database fails the run, and the schema-only guards run without one). There is no linter and no formatter, and the frontend has no tests. `python -m compileall backend/app` is a quick syntax check.
 
 ---
 
@@ -244,5 +244,6 @@ Any change to domain content or contracts gets recorded in the matching `*_DECIS
 - Several source files carry a UTF-8 BOM and/or write Polish characters as Unicode escapes — match each file's existing convention when editing.
 - **Never give `frontend/package.json` a BOM.** Vite's PostCSS config loader runs `JSON.parse` on it, and a BOM fails the production build with a misleading error pointing at `global.css`.
 - `npm run dev` does not type-check; type errors surface only in `npm run build`.
-- Events live in PostgreSQL (the `pgdata` volume); `docker compose down -v` wipes them. The suite has only ever been run against a locally provisioned PostgreSQL, not through `docker compose run`.
+- Events live in PostgreSQL (the `pgdata` volume); `docker compose down -v` wipes them.
+- The suite forces mock AI, so a real `GEMINI_API_KEY` in the environment cannot make tests fail or spend live API calls.
 - Knowledge-base edits must land on both the Python and the TypeScript side.

@@ -10,6 +10,19 @@ from app.main import app
 from app.repositories import event_repo
 
 
+@pytest.fixture(autouse=True)
+def _deterministic_ai(monkeypatch):
+    """Force mock AI, whatever the ambient environment holds.
+
+    Settings read GEMINI_API_KEY and USE_MOCK_AI from the environment, so a
+    developer shell or a container carrying a real key silently flipped
+    ``gemini_enabled`` on and made tests either fail or spend live API calls.
+    Tests that exercise the Gemini path opt in by patching this back off.
+    """
+
+    monkeypatch.setattr(settings, "use_mock_ai", True)
+
+
 @pytest.fixture(scope="session")
 def _database():
     """Open the pool and create the schema.

@@ -36,7 +36,7 @@ These are the rules a well-meaning change is most likely to break. Do not violat
 
 ## Commands
 
-The backend has a pytest suite (63 tests in `backend/tests/`, needing PostgreSQL for all but the static guards); the intended command is `docker compose run --rm backend pytest tests/ -v`. That exact command has never been run — Docker was unavailable, and every run used a locally provisioned PostgreSQL via `DATABASE_URL`. There is **no linter and no formatter** and no frontend test suite; do not guess at `eslint` or similar — they are not configured.
+The backend has a pytest suite (63 tests in `backend/tests/`, needing PostgreSQL for all but the static guards); run it with `docker compose run --rm backend pytest tests/ -v` (verified, 63/63), or against any reachable PostgreSQL via `DATABASE_URL`. The suite forces mock AI, so an ambient `GEMINI_API_KEY` cannot make it fail or spend live calls. There is **no linter and no formatter** and no frontend test suite; do not guess at `eslint` or similar — they are not configured.
 
 ```bash
 # Full stack (backend + frontend behind Caddy) on http://localhost:4540
@@ -51,7 +51,7 @@ uvicorn backend.app.main:app --reload       # Swagger UI at /docs
 cd frontend && npm install && npm run dev
 npm run build                               # tsc -b && vite build
 
-# Backend tests (intended; never executed, see above)
+# Backend tests
 docker compose run --rm backend pytest tests/ -v
 
 # Quick syntax check
