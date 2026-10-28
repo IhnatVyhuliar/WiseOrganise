@@ -128,7 +128,12 @@ def generate_structured(
     valid = False
     selected_model = model or settings.gemini_model_main
     try:
-        client = genai.Client(api_key=settings.gemini_api_key)
+        # HttpOptions.timeout is in milliseconds. It is the only thing that
+        # actually aborts a hung socket.
+        client = genai.Client(
+            api_key=settings.gemini_api_key,
+            http_options=types.HttpOptions(timeout=int(settings.gemini_timeout_seconds * 1000)),
+        )
         response = client.models.generate_content(
             model=selected_model,
             # Plain str, never the GroundedPrompt subclass: the SDK serializes a
@@ -139,6 +144,7 @@ def generate_structured(
                 system_instruction=f"{_SAFETY_INSTRUCTION}\n{system_instruction}",
                 response_mime_type="application/json",
                 response_schema=response_schema(schema),
+                temperature=0,
             ),
         )
         text = getattr(response, "text", None)

@@ -163,9 +163,12 @@ def test_a_stale_job_cannot_overwrite_the_guide_of_a_newer_generate(monkeypatch,
     client.post(f"/api/v1/events/{event_id}/eguide")  # job A
     in_a, release_a = threading.Event(), threading.Event()
     holder: dict[str, threading.Thread] = {}
+    calls: list[int] = []
 
     def model(**kw):
-        if threading.current_thread() is holder["a"]:
+        # The model call now runs on its own bounded thread, so job A is the first call.
+        calls.append(1)
+        if len(calls) == 1:
             in_a.set()
             assert release_a.wait(2)
             return _model_guide(event_id, "A text (old event)")

@@ -5,8 +5,9 @@ ever replaces text; every number and the ustalenia are re-applied from Python.
 """
 from __future__ import annotations
 import logging
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 from typing import Any
+from ..core.config import settings
 from ..integrations.gemini_client import generate_structured
 from ..repositories.event_repo import get_event, save_event
 from ..schemas import AiStatus, EGuideResponse, EmissionsSummary, Ustalenie
@@ -17,6 +18,25 @@ from ..services.ustalenia_service import build_ustalenia
 logger = logging.getLogger(__name__)
 
 _executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="eguide-ai")
+
+# Slack on top of the SDK's own HTTP timeout before the job gives up waiting.
+_WAIT_GRACE_SECONDS = 5.0
+
+
+def _call_model_bounded(**kwargs: Any) -> EGuideResponse:
+    """Run the model call on its own thread and wait for it at most timeout + grace.
+
+    Python cannot kill a thread, so a hung call is only orphaned here: the SDK's
+    HTTP timeout is the real abort. This wait only guarantees that the job ends
+    and its *status* never stays "w toku". Raises ``FutureTimeout`` on expiry.
+    """
+    pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="eguide-ai-call")
+    try:
+        return pool.submit(generate_structured, **kwargs).result(
+            timeout=settings.gemini_timeout_seconds + _WAIT_GRACE_SECONDS
+        )
+    finally:
+        pool.shutdown(wait=False)
 
 
 def submit_eguide_job(event_id: str, run_id: str) -> None:
@@ -65,7 +85,7 @@ def run_eguide_job(event_id: str, run_id: str) -> None:
         event = get_event(event_id)
         if not _owns_guide(event, run_id):
             return
-        generated = generate_structured(
+        generated = _call_model_bounded(
             task="generate_eguide",
             prompt=build_eguide_prompt(event),
             schema=EGuideResponse,
