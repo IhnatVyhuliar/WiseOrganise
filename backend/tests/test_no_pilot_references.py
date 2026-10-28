@@ -4,7 +4,7 @@ from pathlib import Path
 BACKEND = Path(__file__).resolve().parents[1]
 
 # Literal terms; each is also checked in its \uXXXX-escaped spelling.
-_LITERAL = ("UŁ", "Uniwersytet", "Łód", "Łod", "Lodz")
+_LITERAL = ("UŁ", "Uniwersytet", "Łód", "Łod", "Lodz", "uczeln")
 
 
 def _escaped(term: str) -> str:
