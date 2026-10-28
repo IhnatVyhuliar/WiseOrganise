@@ -164,6 +164,15 @@ def create_event_record(data: dict[str, Any]) -> dict[str, Any]:
     return event
 
 
+def ensure_slug(event: dict[str, Any]) -> dict[str, Any]:
+    """Give a record stored before slugs existed a slug, and persist it."""
+
+    if not event.get("slug"):
+        event["slug"] = _new_slug()
+        save_event(event)
+    return event
+
+
 def _fetch_one(where: str, param: str) -> dict[str, Any] | None:
     with _pool.connection() as conn:
         row = conn.execute(f"SELECT payload FROM events WHERE {where} = %s", (param,)).fetchone()

@@ -96,8 +96,6 @@ class TeamRoleChecklist(APIModel):
 
     role: str
 
-    contact: str
-
     tasks: list[str]
 
     completed_tasks: list[str] = Field(default_factory=list)

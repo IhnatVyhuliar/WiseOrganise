@@ -6,7 +6,7 @@ from copy import deepcopy
 from typing import Any
 
 from ..mocks.checklist_mocks import checklist_fixtures
-from ..repositories.event_repo import create_event_record, save_event
+from ..repositories.event_repo import create_event_record, ensure_slug, save_event
 from ..schemas import ChecklistItem, ChecklistResponse, ChecklistUpdatePayload, EventCreate, EventResponse, EventStatus
 from ..core.config import settings
 from ..integrations.gemini_client import generate_structured
@@ -24,6 +24,7 @@ _GUIDE_FIELDS = ("needed_areas", "attendees", "pilot", "event_date", "location")
 def public_event(event: dict[str, Any]) -> EventResponse:
     """Serialize an internal event record to its public response model."""
 
+    ensure_slug(event)
     fields = set(EventResponse.model_fields)
     data = {key: value for key, value in event.items() if key in fields}
     # share_url is derived from the slug, never stored on the record.
