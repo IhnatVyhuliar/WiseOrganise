@@ -1,6 +1,6 @@
 # WiseOrganise
 
-A prototype that guides an event organizer toward sustainable choices, step by step. Piloted on a University of Łódź (UŁ) event.
+A prototype that guides an event organizer toward sustainable choices, step by step. Events are stored in PostgreSQL and can be shared read-only through a short link.
 
 Live pilot: **https://wiseorganise.reachit.space**
 
@@ -73,7 +73,7 @@ docker compose up --build
 # open http://localhost:4540
 ```
 
-That brings up three containers: the FastAPI backend, the built React SPA behind nginx, and Caddy in front of both, routing `/api/*`, `/docs*` and `/openapi.json` to the backend and everything else to the frontend. **Port 4540 is the only published port**, and it is bound to loopback by default — so there is no CORS to configure and nothing else is exposed.
+That brings up four containers: PostgreSQL, the FastAPI backend, the built React SPA behind nginx, and Caddy in front of the last two, routing `/api/*`, `/docs*` and `/openapi.json` to the backend and everything else to the frontend. **Port 4540 is the only published port**, and it is bound to loopback by default — so there is no CORS to configure and nothing else is exposed.
 
 Swagger UI for the API: http://localhost:4540/docs
 
@@ -85,12 +85,20 @@ Everything lives in a single `.env` at the repo root, copied from `.env.example`
 |---|---|---|---|
 | `GEMINI_API_KEY` | *(empty)* | Google Gemini key. Empty means the app runs fully deterministically. | **Google AI Studio — https://aistudio.google.com/apikey.** Sign in with a Google account and create a key; the free tier is enough for the pilot. |
 | `GEMINI_MODEL_MAIN` | `gemini-3.8-flash` | Model used for the main structured generations (guide, analysis, area suggestions). | Your choice; leave as is unless you have a reason. |
-| `GEMINI_MODEL_LITE` | `gemini-3.5-flash-lite` | Cheaper model used only by the recommendation shim. | Your choice. |
+| `GEMINI_MODEL_LITE` | `gemini-3.5-flash-lite` | Reserved. Read into settings but not used by any code path since the recommendation routes were removed. | Your choice. |
+| `GEMINI_TIMEOUT_SECONDS` | `45` | Per-call timeout for live Gemini requests, in seconds. | Your choice. |
+| `DATABASE_URL` | `postgresql://wiseorganise:wiseorganise@db:5432/wiseorganise` | PostgreSQL connection string the backend uses. | The default points at the compose `db` service; change it only to use another database. |
+| `POSTGRES_PASSWORD` | `wiseorganise` | Password the compose `db` service is created with. Keep it consistent with `DATABASE_URL`. | Your choice; set it to something real on any shared host. |
+| `PUBLIC_BASE_URL` | `https://wiseorganise.reachit.space` | Origin used to build share links (`{PUBLIC_BASE_URL}/w/{slug}`). | The public address of your deployment. |
+| `DB_CONNECT_RETRIES` | `30` | How many times start-up retries reaching the database. | Your choice. |
+| `DB_CONNECT_DELAY_SECONDS` | `2` | Pause between those retries, in seconds. | Your choice. |
 | `USE_MOCK_AI` | `true` | Master switch for live AI. `true` = no network calls, deterministic output. | Your choice. |
 | `EDGE_BIND_ADDR` | `127.0.0.1` | Which host interface Caddy's port 4540 is published on. | Your choice. Set `0.0.0.0` only to reach the stack from another machine during development. |
 | `VITE_API_BASE_URL` | `/api/v1` | Base URL the SPA calls. Read by Vite **at build time**. | Only matters when running the Vite dev server against a separately started backend — then set `http://localhost:8000/api/v1`. |
 
-Defaults are defined in `backend/app/core/config.py`, `docker-compose.yml` and `frontend/src/lib/api.ts`; `.env` is gitignored and never committed.
+Defaults are defined in `backend/app/core/config.py`, `docker-compose.yml` and `frontend/src/lib/api.ts`; `.env` is gitignored and never committed. `.env.example` does not list `PUBLIC_BASE_URL`, `DB_CONNECT_RETRIES`, `DB_CONNECT_DELAY_SECONDS` or `VITE_API_BASE_URL`; the code defaults apply unless you add them.
+
+**Compose forwarding caveat.** `docker-compose.yml` passes only `GEMINI_API_KEY`, `GEMINI_MODEL_MAIN`, `GEMINI_MODEL_LITE`, `USE_MOCK_AI`, `DATABASE_URL` (backend) and `POSTGRES_PASSWORD` (db) into the containers. `GEMINI_TIMEOUT_SECONDS`, `PUBLIC_BASE_URL`, `DB_CONNECT_RETRIES` and `DB_CONNECT_DELAY_SECONDS` therefore keep their `config.py` defaults under `docker compose` unless you add them to the backend's `environment:` block. They take effect as written when you run the backend directly.
 
 ### Turning the AI on
 
@@ -123,7 +131,13 @@ Two things to know:
 - The uvicorn module path differs by context: `backend.app.main:app` from the repo root, `app.main:app` inside the Docker image (where `backend/` is the working directory).
 - **`npm run dev` does not type-check** — Vite only strips types. Type errors appear for the first time in `npm run build` (`tsc -b && vite build`). Run that before assuming a frontend change is good.
 
-There is no test suite, no linter and no formatter in this repo. The closest thing to a backend check is `python -m compileall backend/app`.
+The backend has a pytest suite of 56 tests in `backend/tests/`; it needs a reachable PostgreSQL. The intended command is:
+
+```bash
+docker compose run --rm backend pytest tests/ -v
+```
+
+**This exact command has never been executed:** Docker was unavailable while the suite was written, so the compose and Dockerfile changes were reviewed by reading only, and every run used a locally provisioned PostgreSQL (set `DATABASE_URL` to it and run `pytest tests/` from `backend/`; without a reachable database the whole session skips). There is no linter and no formatter, and the frontend has no tests. `python -m compileall backend/app` is a quick syntax check.
 
 ---
 
@@ -136,9 +150,10 @@ There is no test suite, no linter and no formatter in this repo. The closest thi
 - `api/v1/router.py` mounts everything under `/api/v1` and itself serves `GET /reference-data`, the single call the SPA bootstraps from on startup.
 - `schemas/__init__.py` defines `APIModel`, the base every schema inherits: it emits camelCase, accepts either form, and forbids extra fields. A schema that skips it silently breaks the frontend contract.
 - `mocks/knowledge_mocks.py` is the single backend source of Polish domain content. Content changes belong there, not in services.
-- `repositories/memory_repo.py` holds `EVENTS_DB`, a **process-local dict. There is no database — restarting the backend wipes every event.**
+- `repositories/event_repo.py` stores events in **PostgreSQL**: one `events` row per event with a unique `slug` and the record as JSONB. Dates are stored as ISO strings and revived on read, and mutations go through `save_event()`. Events survive restarts (data lives in the `pgdata` volume); `docker compose down -v` deletes it.
 - `core/config.py` gates live AI behind `settings.gemini_enabled`; services must keep both the mock and the live path working.
-- `integrations/gemini_client.py` lazily imports the SDK (so mock mode works without `google-genai` installed), forces a Pydantic response schema, and prefixes a safety instruction.
+- `workers/ai_jobs.py` runs the optional Gemini pass over the e-guide in the background; the deterministic guide is stored and served first.
+- `integrations/gemini_client.py` lazily imports the SDK (so mock mode works without `google-genai` installed), forces a Pydantic response schema, calls the model at temperature 0 with a configurable timeout, and prefixes a safety instruction.
 - Root-level `main.py`, `schemas.py` and `mock_data.py` are compatibility re-exports from `backend/app/`, not entry points.
 
 **Frontend — `frontend/src/` (React 19, TypeScript, Vite).**
@@ -168,15 +183,30 @@ Base prefix `/api/v1`. Swagger UI at `/docs`, schema at `/openapi.json` — both
 | Route | Purpose |
 |---|---|
 | `GET /reference-data` | The whole knowledge base in one call; the SPA's bootstrap |
-| `POST /events` | Create a draft event |
-| `PATCH /events/{id}` | Update event details (place, date, attendees, description) |
+| `GET /events`, `POST /events` | List events; create a draft (the response carries `slug` and `shareUrl`) |
+| `GET /events/criteria` | Neutral supplier criteria |
+| `GET /events/{id}`, `PATCH /events/{id}`, `DELETE /events/{id}` | Read, update (place, date, attendees, description) or delete an event |
 | `PATCH /events/{id}/needed-areas` | Record which lifecycle areas the event actually needs |
-| `POST /events/{id}/suggest-areas` | Propose areas from the description — Gemini-only, always `200` |
-| `PATCH /events/{id}/options` | Persist the chosen level per area |
-| `POST /events/{id}/eguide` | Compile the final structured eco-guide |
+| `POST /events/{id}/suggest-areas` | Propose areas from the description — Gemini-only, always `200`, cached per description |
+| `GET /events/{id}/options`, `PATCH /events/{id}/options` | Read the areas and levels; persist the chosen level per area |
+| `POST /events/{id}/eguide` | Store the deterministic guide and return it at once; with Gemini on, `aiStatus` is `w toku` while the text is refined in the background |
+| `GET /events/{id}/eguide` | The stored guide (built on the fly if none yet); `aiStatus` is `wyłączone`, `w toku`, `gotowe` or `nieudane`. Never `409` |
+| `PATCH /events/{id}/eguide/checklist` | Toggle one checklist item; no longer `409`s when no guide exists yet |
 | `GET /events/{id}/impact` | Deterministic before/after emissions estimate |
+| `POST /events/{id}/analyze`, `GET /events/{id}/checklist`, `PATCH /events/{id}/checklist` | Legacy conditional checklist |
+| `GET /public/events/{slug}` | Read-only public view of a shared event; see [Sharing an event](#sharing-an-event) |
 
-The full endpoint table is in [`backend/BACKEND_ALIGNMENT_DECISIONS.md`](backend/BACKEND_ALIGNMENT_DECISIONS.md). Note that `/recommend`, `/recommendations` and `/recommendations/{id}/select` survive only as a compatibility shim projecting **neutral categories, never vendors**.
+The full endpoint table is in [`backend/BACKEND_ALIGNMENT_DECISIONS.md`](backend/BACKEND_ALIGNMENT_DECISIONS.md). The former `/recommend`, `/recommendations` and `/recommendations/{id}/select` routes have been removed, and no response carries a score field. That is exactly 13 paths in `/openapi.json`.
+
+### Sharing an event
+
+Every event gets a random 8-character slug (lowercase letters and digits) when it is created. The API returns it as `slug`, together with `shareUrl`, which has the shape `{PUBLIC_BASE_URL}/w/{slug}`, for example `https://wiseorganise.reachit.space/w/k3x9q2ab`. The data behind it is served at `GET /api/v1/public/events/{slug}`.
+
+The public view is read-only and a strict whitelist. It **shows**: the title, event type, date, location and attendee count; the arrangements chosen per area (`ustalenia`, with the reason and cost effect of each level); the organizer checklist; the team checklists; and the impact summary. It **does not show** the free-text description, participant origins, budget or other planning inputs, any internal id, or anything that would let a visitor edit. Opening the link never saves anything and never calls Gemini: it shows the stored guide, or a deterministic one built on the fly.
+
+The slug is the only protection: anyone holding a link can view that event, there is no "published" switch, and there is no login. Do not share a link for an event you would not want read.
+
+Note that the React app has no `/w/:slug` route yet, so the link shape is defined by the API but the page behind it is a frontend task.
 
 ### The pilot deployment
 
@@ -191,10 +221,10 @@ The rest of the chain is documented in [`CLAUDE.md`](CLAUDE.md).
 ### Repo map
 
 ```
-backend/            FastAPI app, knowledge base, Gemini prompts
+backend/            FastAPI app, knowledge base, Gemini prompts, pytest suite
 frontend/           React SPA (Vite), fallback knowledge base, fonts
 Caddyfile           Reverse proxy: /api, /docs, /openapi.json -> backend; rest -> frontend
-docker-compose.yml  The three services and the single published port
+docker-compose.yml  Backend, PostgreSQL, frontend and Caddy; the single published port
 Podsumowanie-spotkania-...pdf   Mentor meeting summary — the product source of truth
 ```
 
@@ -205,7 +235,7 @@ Not production code, kept only for inspection: `Legacy/`, `frontend/unpacked/`, 
 In strict priority order — when they disagree, the higher one wins:
 
 1. The mentor meeting summary PDF — authoritative for every product decision.
-2. [`backend/BACKEND_ALIGNMENT_DECISIONS.md`](backend/BACKEND_ALIGNMENT_DECISIONS.md) and [`frontend/ARCHITECTURE_AND_DECISIONS.md`](frontend/ARCHITECTURE_AND_DECISIONS.md) — the decision logs (DEC-01…DEC-11) translating the PDF into code contracts.
+2. [`backend/BACKEND_ALIGNMENT_DECISIONS.md`](backend/BACKEND_ALIGNMENT_DECISIONS.md) and [`frontend/ARCHITECTURE_AND_DECISIONS.md`](frontend/ARCHITECTURE_AND_DECISIONS.md) — the decision logs (the backend log runs DEC-01…DEC-22, the frontend log has its own meanings for the same numbers) translating the PDF into code contracts.
 3. The code itself.
 4. [`CLAUDE.md`](CLAUDE.md) — working conventions for this repo.
 
@@ -216,5 +246,5 @@ Any change to domain content or contracts gets recorded in the matching `*_DECIS
 - Several source files carry a UTF-8 BOM and/or write Polish characters as Unicode escapes — match each file's existing convention when editing.
 - **Never give `frontend/package.json` a BOM.** Vite's PostCSS config loader runs `JSON.parse` on it, and a BOM fails the production build with a misleading error pointing at `global.css`.
 - `npm run dev` does not type-check; type errors surface only in `npm run build`.
-- There is no database — nothing survives a backend restart.
+- Events live in PostgreSQL (the `pgdata` volume); `docker compose down -v` wipes them. The suite has only ever been run against a locally provisioned PostgreSQL, not through `docker compose run`.
 - Knowledge-base edits must land on both the Python and the TypeScript side.

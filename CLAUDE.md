@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-WiseOrganise is a prototype tool that guides an event organizer toward sustainable choices. It is piloted on a University of Łódź (UŁ) event. In this project **the domain content is the product** — the Polish knowledge base matters more than the code that serves it.
+WiseOrganise is a prototype tool that guides an event organizer toward sustainable choices. It is deployed as a public pilot. In this project **the domain content is the product** — the Polish knowledge base matters more than the code that serves it.
 
 ## Product source of truth
 
@@ -26,6 +26,9 @@ These are the rules a well-meaning change is most likely to break. Do not violat
 - **Two layers of supplier criteria.** `VENDOR_CRITERIA` / `vendorCriteria` is the universal seven and must stay as it is — it is the full overview on the criteria page. `AREA_CRITERIA` / `areaCriteria` is the narrower layer written per area, with a `dowod` ("what evidence to ask for") field the universal list does not have. Add detail there, not by rewriting the seven.
 - **Nothing the organizer needs is collapsed by default.** Levels, their "why", their cost effect, and the per-area supplier knowledge all render open (DEC-11 in the frontend log). Do not reintroduce an accordion around them.
 - **AI area suggestion is Gemini-only.** `POST /events/{id}/suggest-areas` needs `GEMINI_API_KEY` **and** `USE_MOCK_AI=false`. It always answers 200: without a model it returns `available: false` and a Polish sentence the UI shows, never a silent no-op or a 500.
+- **The e-guide always exists.** `POST /events/{id}/eguide` stores the deterministic guide and returns it at once; `GET /eguide` and `PATCH /eguide/checklist` build it lazily and never answer 409. Gemini only refines the text in a background job (`workers/ai_jobs.py`); `aiStatus` is `wyłączone` / `w toku` / `gotowe` / `nieudane`, and numbers and `ustalenia` are always re-applied from Python.
+- **The public endpoint is read-only and whitelisted.** `GET /api/v1/public/events/{slug}` exposes only the header, `ustalenia`, checklists and impact summary (`PublicEventView`). It must never write, change status or call Gemini, and must never expose the description, participant origins, `contact` details or internal keys. The slug is the only access control; the share link is `{PUBLIC_BASE_URL}/w/{slug}`.
+- **No pilot institution in the product.** Defaults and knowledge-base text are neutral; `backend/tests/test_no_pilot_references.py` sweeps `backend/` for the pilot university's name and city.
 - **Whole participant lifecycle**, from leaving home, through the event, to the return trip and what is left behind — not just event hours.
 - **Locality and seasonality are universal filters** ("im dalej od nas, tym gorzej"); employment on an employment contract (umowa o pracę) is a social criterion.
 - **Language split:** every user-facing string is Polish; code, identifiers, comments, and documentation are English.
@@ -33,14 +36,14 @@ These are the rules a well-meaning change is most likely to break. Do not violat
 
 ## Commands
 
-There is **no test suite, no linter, and no formatter** in this repo. Do not guess at `pytest`, `eslint`, or similar — they are not configured.
+The backend has a pytest suite (56 tests in `backend/tests/`, needing PostgreSQL); the intended command is `docker compose run --rm backend pytest tests/ -v`. That exact command has never been run — Docker was unavailable, and every run used a locally provisioned PostgreSQL via `DATABASE_URL`. There is **no linter and no formatter** and no frontend test suite; do not guess at `eslint` or similar — they are not configured.
 
 ```bash
 # Full stack (backend + frontend behind Caddy) on http://localhost:4540
 cp .env.example .env
 docker compose up --build
 
-# Backend only
+# Backend only (needs a reachable PostgreSQL; DATABASE_URL defaults to the compose host `db`)
 pip install -r backend/requirements.txt
 uvicorn backend.app.main:app --reload       # Swagger UI at /docs
 
@@ -48,7 +51,10 @@ uvicorn backend.app.main:app --reload       # Swagger UI at /docs
 cd frontend && npm install && npm run dev
 npm run build                               # tsc -b && vite build
 
-# Closest thing to a backend check
+# Backend tests (intended; never executed, see above)
+docker compose run --rm backend pytest tests/ -v
+
+# Quick syntax check
 python -m compileall backend/app
 ```
 
@@ -74,12 +80,12 @@ Layering is endpoints → services → repository/mocks.
 
 - `api/v1/router.py` mounts everything under `/api/v1` and itself serves `GET /reference-data`, a single call returning the whole knowledge base. The frontend bootstraps from it on startup.
 - `schemas/__init__.py` defines `APIModel`, the base every schema must inherit: `alias_generator=to_camel` plus `populate_by_name`, so the API emits camelCase and accepts either form; also `extra="forbid"` and `use_enum_values=True`. A schema that skips `APIModel` silently breaks the frontend contract.
-- `repositories/memory_repo.py` — `EVENTS_DB` is a process-local dict. There is no database; a restart wipes all state. Route mutations through `save_event()`.
+- `repositories/event_repo.py` — PostgreSQL (`DATABASE_URL`, compose service `db`): one `events` row per event, the record as JSONB, a unique 8-character `slug`. Dates are ISO strings revived on read. Route mutations through `save_event()`. State survives restarts; the old `memory_repo.py`/`EVENTS_DB` is gone. The file has no BOM.
 - `mocks/knowledge_mocks.py` — the **single** backend source of Polish domain content (`SIX_R`, `EVENT_AREAS`, `VENDOR_CRITERIA`, `AREA_QUESTIONS`, `ORGANIZER_CHECKLIST`, `TEAM_ROLES`, `CONTRACT_CLAUSES`, `GREENWASHING_RISKS`, `ECO_SUMMARY`). Content changes belong here, not in services.
 - `core/config.py` — `settings.gemini_enabled` is the gate: live Gemini only when `GEMINI_API_KEY` is set **and** `USE_MOCK_AI=false`. The default is `USE_MOCK_AI=true`, so the whole product runs deterministically with no API key. Services must keep both paths working (see `compile_eguide` in `services/eguide_service.py`).
 - `integrations/gemini_client.py` — `generate_structured()` lazily imports the SDK (so mock mode works without `google-genai` installed), forces a Pydantic `response_schema`, prefixes `_SAFETY_INSTRUCTION`, and appends a record to `ai_runs`.
 - `api/deps.py` — use `get_event_or_404` instead of hand-rolling 404s.
-- The `/recommend`, `/recommendations`, and `/recommendations/{id}/select` routes survive only as a compatibility shim projecting **neutral categories**, never vendors. Full endpoint table: `backend/BACKEND_ALIGNMENT_DECISIONS.md`.
+- The `/recommend`, `/recommendations`, and `/recommendations/{id}/select` routes are **gone** (not a shim), and no schema carries a score field. Full endpoint table: `backend/BACKEND_ALIGNMENT_DECISIONS.md`.
 - Root-level `main.py`, `schemas.py`, and `mock_data.py` are compatibility re-exports from `backend/app/`. Do not add logic there.
 
 ### Frontend — `frontend/src/` (React 19, TypeScript, Vite)
@@ -92,7 +98,7 @@ Layering is endpoints → services → repository/mocks.
 
 ### Encoding note
 
-Several files carry a UTF-8 BOM and/or write Polish characters as Unicode escapes (`knowledge_mocks.py`, `App.tsx`, `api/v1/endpoints/events.py`, `memory_repo.py`, and most `frontend/*.config.*`). Match each file's existing convention when editing Python/TSX sources.
+Several files carry a UTF-8 BOM and/or write Polish characters as Unicode escapes (`knowledge_mocks.py`, `App.tsx`, `api/v1/endpoints/events.py`, and most `frontend/*.config.*`). Match each file's existing convention when editing Python/TSX sources.
 
 **Exception — never give `frontend/package.json` a BOM.** Vite's PostCSS config loader runs `JSON.parse` on it, and a BOM fails the production build with a misleading `Failed to load PostCSS config ... is not valid JSON` error pointing at `global.css`. This already happened once.
 
