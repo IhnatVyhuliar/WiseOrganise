@@ -9,13 +9,11 @@ from ....repositories.event_repo import delete_event, list_events
 from ....schemas import (
     ChecklistResponse,
     ChecklistUpdatePayload,
-    CategoryRecommendationsResponse,
     EGuideResponse,
     EmissionsSummary,
     EventCreate,
     EventResponse,
     EventUpdate,
-    VendorRecommendation,
     AreaOptionsResponse, OptionSelectionPayload, OptionSelectionResponse, CriteriaResponse,
     ChecklistDoneUpdate, NeededAreasUpdate,
     AreaSuggestionResponse,
@@ -27,19 +25,13 @@ from ....services.event_service import (
     checklist_response,
     create_event,
     public_event,
+    update_checklist,
     update_event,
 )
 from ....services.options_service import get_options, select_needed_areas, select_options
 from ....services.checklist_builder import set_done
 from ....services.impact_service import build_impact
 from ....services.criteria_service import get_criteria
-from ....services.recommendation_service import (
-    recommend_vendors,
-    recommendations_response,
-    select_recommendation,
-    update_checklist,
-)
-
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -131,38 +123,6 @@ def update_checklist_endpoint(event_id: str, payload: ChecklistUpdatePayload) ->
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except KeyError as exc:
         raise HTTPException(status_code=422, detail=f"Unknown checklist item: {exc.args[0]}") from exc
-
-
-@router.post("/{event_id}/recommend", response_model=CategoryRecommendationsResponse)
-def recommend_event_endpoint(event_id: str) -> CategoryRecommendationsResponse:
-    """Generate neutral supplier-category evaluation cards."""
-
-    try:
-        return recommend_vendors(get_event_or_404(event_id))
-    except LookupError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
-
-
-@router.get("/{event_id}/recommendations", response_model=CategoryRecommendationsResponse)
-def get_recommendations_endpoint(event_id: str) -> CategoryRecommendationsResponse:
-    """Return neutral supplier-category evaluation cards."""
-
-    try:
-        return recommendations_response(get_event_or_404(event_id))
-    except LookupError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
-
-
-@router.post("/{event_id}/recommendations/{rec_id}/select", response_model=VendorRecommendation)
-def select_recommendation_endpoint(event_id: str, rec_id: str) -> VendorRecommendation:
-    """Toggle a neutral supplier-category card for compatibility."""
-
-    try:
-        return select_recommendation(get_event_or_404(event_id), rec_id)
-    except LookupError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
-    except KeyError as exc:
-        raise HTTPException(status_code=404, detail="Recommendation not found") from exc
 
 
 @router.post("/{event_id}/eguide", response_model=EGuideResponse)

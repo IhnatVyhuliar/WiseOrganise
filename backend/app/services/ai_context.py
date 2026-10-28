@@ -22,11 +22,9 @@ from typing import Any, Iterable
 
 from ..integrations.gemini_client import serialize_for_prompt
 from ..mocks.knowledge_mocks import (
-    AREA_QUESTIONS,
     CONTRACT_CLAUSES,
     EVENT_AREAS,
     GREENWASHING_RISKS,
-    VENDOR_CRITERIA,
 )
 from .checklist_builder import build_organizer_checklist, build_team_checklists
 
@@ -137,18 +135,6 @@ def build_area_suggestion_prompt(event: dict[str, Any]) -> GroundedPrompt:
         f"{prompt_text('suggest_areas.md')}\n{knowledge}\n{_event_block(event)}",
         allowed_ids,
     )
-
-
-def build_vendor_prompt(event: dict[str, Any]) -> GroundedPrompt:
-    """Context for neutral supplier-category criteria."""
-    knowledge = _knowledge_block(
-        {
-            "VENDOR_CRITERIA": VENDOR_CRITERIA,
-            "AREA_QUESTIONS": AREA_QUESTIONS,
-            "NEEDED_AREAS_WITH_CHOSEN_LEVELS": needed_areas(event),
-        }
-    )
-    return GroundedPrompt(f"{prompt_text('vendor_criteria.md')}\n{knowledge}\n{_event_block(event)}")
 
 
 def build_analyze_prompt(event: dict[str, Any]) -> GroundedPrompt:

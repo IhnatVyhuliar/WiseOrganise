@@ -7,7 +7,7 @@ from typing import Any
 
 from ..mocks.checklist_mocks import checklist_fixtures
 from ..repositories.event_repo import create_event_record, save_event
-from ..schemas import ChecklistItem, ChecklistResponse, EventCreate, EventResponse, EventStatus
+from ..schemas import ChecklistItem, ChecklistResponse, ChecklistUpdatePayload, EventCreate, EventResponse, EventStatus
 from ..core.config import settings
 from ..integrations.gemini_client import generate_structured
 from .ai_context import build_analyze_prompt
@@ -94,3 +94,27 @@ def checklist_response(event: dict[str, Any]) -> ChecklistResponse:
         items=[ChecklistItem.model_validate(item) for item in event["checklist"]],
         **event["weights"],
     )
+
+
+def update_checklist(event: dict[str, Any], payload: ChecklistUpdatePayload) -> None:
+    """Apply legacy checklist answers while invalidating derived content."""
+    if event.get("checklist") is None:
+        raise LookupError("Analyze the event before updating its checklist")
+    items_by_id = {item["id"]: item for item in event["checklist"]}
+    for update in payload.items:
+        item = items_by_id.get(update.id)
+        if item is None:
+            raise KeyError(update.id)
+        if update.accept_suggestion:
+            item["user_response"] = item["suggested_response"]
+        elif "user_response" in update.model_fields_set:
+            item["user_response"] = update.user_response
+        if update.priority is not None:
+            item["priority"] = update.priority
+        item["is_completed"] = item["user_response"] is not None
+    weights = payload.resolved_weights()
+    if weights is not None:
+        event["weights"] = weights.model_dump()
+    event["recommendations"] = {}
+    event["eguide"] = None
+    save_event(event)

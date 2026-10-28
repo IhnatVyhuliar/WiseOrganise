@@ -50,7 +50,6 @@ def compile_eguide(event: dict[str, Any]) -> EGuideResponse:
         team_checklists=[TeamRoleChecklist.model_validate(item) for item in build_team_checklists(event)],
         impact_summary=impact,
         emissions_summary=impact,
-        selected_vendors_summary=[],
         greenwashing_risk_matrix=deepcopy(GREENWASHING_RISKS),
         timeline_tasks=[TimelineTask(milestone=item["milestone"], task=item["label"]) for item in organizer],
         contract_clauses_and_questions=deepcopy(CONTRACT_CLAUSES),

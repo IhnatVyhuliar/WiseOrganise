@@ -46,7 +46,6 @@ from .eguide import (  # noqa: E402
     GreenwashingRisk,
     RiskFlag,
     RiskMatrix,
-    SelectedVendorSummary,
     TimelineTask,
 )
 from .enums import (  # noqa: E402
@@ -63,20 +62,13 @@ from .event import EventCreate, EventPatch, EventResponse, EventUpdate, NeededAr
 from .options import AreaOptionsResponse, EventArea, OptionLevel, OptionSelection, OptionSelectionPayload, OptionSelectionResponse  # noqa: E402
 from .criteria import AreaCriteria, AreaCriterion, AreaVerification, CriteriaResponse, VendorCriterion  # noqa: E402
 from .suggestions import AreaSuggestion, AreaSuggestionResponse  # noqa: E402
-from .recommendation import (  # noqa: E402
-    CategoryRecommendationsResponse,
-    RecommendationList,
-    RecommendationsResponse,
-    VendorRecommendation,
-)
 
 __all__ = [
     "APIModel", "ChecklistValue", "EventStatus", "ChecklistCategory", "Category",
     "AnswerType", "AreaId", "CostEffect", "LifecycleStage", "SixR", "VerificationStatus", "FlagColor", "Milestone", "EventCreate",
     "EventUpdate", "EventPatch", "EventResponse", "NeededAreasUpdate", "PilotContext", "ChecklistItem", "ChecklistItemUpdate",
     "ChecklistResponse", "ChecklistUpdatePayload", "ChecklistPatch", "Weights",
-    "VendorRecommendation", "CategoryRecommendationsResponse", "RecommendationsResponse",
-    "RecommendationList", "EmissionsSummary", "EcoMotivator", "SelectedVendorSummary",
+    "EmissionsSummary", "EcoMotivator",
     "GreenwashingRisk", "RiskFlag", "RiskMatrix", "TimelineTask", "ContractClause", "ChecklistDoneUpdate",
     "EGuide", "EGuideResponse", "ImpactSummary", "OrganizerChecklistItem", "TeamRoleChecklist", "EventArea", "OptionLevel", "AreaOptionsResponse", "OptionSelection", "OptionSelectionPayload", "OptionSelectionResponse", "VendorCriterion", "AreaVerification", "CriteriaResponse",
 ]

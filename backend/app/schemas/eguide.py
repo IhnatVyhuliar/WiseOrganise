@@ -6,7 +6,7 @@ from pydantic import Field, model_validator
 
 from . import APIModel
 
-from .enums import AreaId, Category, FlagColor, Milestone
+from .enums import AreaId, FlagColor, Milestone
 
 
 
@@ -138,26 +138,6 @@ class ContractClause(APIModel):
 
 
 
-class SelectedVendorSummary(APIModel):
-
-    """Compatibility projection; concrete brands are never promoted by the API."""
-
-    rec_id: str
-
-    vendor_id: str
-
-    name: str
-
-    category: Category
-
-    total_score: float = Field(ge=0, le=100)
-
-    is_selected: bool
-
-    justification: str
-
-
-
 class EGuideResponse(APIModel):
 
     event_id: str
@@ -175,8 +155,6 @@ class EGuideResponse(APIModel):
     timeline_tasks: list[TimelineTask] = Field(default_factory=list)
 
     contract_clauses_and_questions: list[ContractClause] = Field(default_factory=list)
-
-    selected_vendors_summary: list[SelectedVendorSummary] = Field(default_factory=list)
 
 
 
