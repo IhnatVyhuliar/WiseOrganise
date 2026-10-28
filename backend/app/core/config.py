@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     gemini_model_main: str = Field(default="gemini-3.8-flash", validation_alias="GEMINI_MODEL_MAIN")
     gemini_model_lite: str = Field(default="gemini-3.5-flash-lite", validation_alias="GEMINI_MODEL_LITE")
     use_mock_ai: bool = Field(default=True, validation_alias="USE_MOCK_AI")
+    database_url: str = Field(
+        default="postgresql://wiseorganise:wiseorganise@db:5432/wiseorganise", validation_alias="DATABASE_URL"
+    )
+    db_connect_retries: int = Field(default=30, validation_alias="DB_CONNECT_RETRIES")
+    db_connect_delay_seconds: float = Field(default=2.0, validation_alias="DB_CONNECT_DELAY_SECONDS")
 
     @property
     def gemini_enabled(self) -> bool:

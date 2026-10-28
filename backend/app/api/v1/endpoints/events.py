@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, status
 
 from ....api.deps import get_event_or_404
-from ....repositories.memory_repo import delete_event, list_events
+from ....repositories.event_repo import delete_event, list_events
 from ....schemas import (
     ChecklistResponse,
     ChecklistUpdatePayload,

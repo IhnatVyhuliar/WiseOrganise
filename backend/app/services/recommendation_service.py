@@ -3,7 +3,7 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any
 from ..mocks.knowledge_mocks import EVENT_AREAS, VENDOR_CRITERIA
-from ..repositories.memory_repo import save_event
+from ..repositories.event_repo import save_event
 from ..schemas import CategoryRecommendationsResponse, ChecklistUpdatePayload, VendorRecommendation
 from ..core.config import settings
 from ..integrations.gemini_client import generate_structured

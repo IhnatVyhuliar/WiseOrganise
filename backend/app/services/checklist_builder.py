@@ -7,7 +7,7 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any
 from ..mocks.knowledge_mocks import EVENT_AREAS, ORGANIZER_CHECKLIST, TEAM_ROLES
-from ..repositories.memory_repo import save_event
+from ..repositories.event_repo import save_event
 from ..schemas import ChecklistDoneUpdate
 
 ALL_AREA_IDS: list[str] = [area["id"] for area in EVENT_AREAS]

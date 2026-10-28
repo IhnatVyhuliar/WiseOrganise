@@ -5,6 +5,8 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 COPY app ./app
 COPY prompts ./prompts
+COPY tests ./tests
+COPY pytest.ini ./pytest.ini
 EXPOSE 8000
 # --forwarded-allow-ips=* is safe: port 8000 is only exposed on the compose
 # network, so Caddy is the only peer that can reach it.

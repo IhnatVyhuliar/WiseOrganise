@@ -2,7 +2,7 @@
 from __future__ import annotations
 from typing import Any
 from ..mocks.knowledge_mocks import EVENT_AREAS
-from ..repositories.memory_repo import save_event
+from ..repositories.event_repo import save_event
 from ..schemas import AreaOptionsResponse, EventArea, EventResponse, NeededAreasUpdate, OptionSelectionPayload, OptionSelectionResponse
 from .checklist_builder import needed_area_ids
 from .event_service import public_event

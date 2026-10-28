@@ -2,7 +2,7 @@
 
 from fastapi import HTTPException
 
-from ..repositories.memory_repo import get_event
+from ..repositories.event_repo import get_event
 
 
 def get_event_or_404(event_id: str) -> dict:

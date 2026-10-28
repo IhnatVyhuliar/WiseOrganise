@@ -6,7 +6,7 @@ from copy import deepcopy
 from typing import Any
 
 from ..mocks.checklist_mocks import checklist_fixtures
-from ..repositories.memory_repo import create_event_record, save_event
+from ..repositories.event_repo import create_event_record, save_event
 from ..schemas import ChecklistItem, ChecklistResponse, EventCreate, EventResponse, EventStatus
 from ..core.config import settings
 from ..integrations.gemini_client import generate_structured

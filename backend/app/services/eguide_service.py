@@ -8,7 +8,7 @@ import logging
 from copy import deepcopy
 from typing import Any
 from ..mocks.knowledge_mocks import CONTRACT_CLAUSES, GREENWASHING_RISKS
-from ..repositories.memory_repo import save_event
+from ..repositories.event_repo import save_event
 from ..schemas import EGuideResponse, EmissionsSummary, OrganizerChecklistItem, TeamRoleChecklist, TimelineTask, EventStatus
 from ..core.config import settings
 from ..integrations.gemini_client import generate_structured

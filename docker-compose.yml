@@ -6,8 +6,26 @@ services:
       GEMINI_MODEL_MAIN: ${GEMINI_MODEL_MAIN:-gemini-3.8-flash}
       GEMINI_MODEL_LITE: ${GEMINI_MODEL_LITE:-gemini-3.5-flash-lite}
       USE_MOCK_AI: ${USE_MOCK_AI:-true}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://wiseorganise:wiseorganise@db:5432/wiseorganise}
     expose:
       - "8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [wiseorganise]
+    restart: unless-stopped
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: wiseorganise
+      POSTGRES_USER: wiseorganise
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wiseorganise}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wiseorganise -d wiseorganise"]
+      interval: 5s
+      retries: 10
     networks: [wiseorganise]
     restart: unless-stopped
   frontend:
@@ -33,5 +51,6 @@ networks:
     driver: bridge
 
 volumes:
+  pgdata:
   caddy_data:
   caddy_config:
