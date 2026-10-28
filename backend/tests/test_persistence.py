@@ -21,7 +21,8 @@ def test_patch_after_a_round_trip_keeps_datetime_comparison_working(client):
         "/api/v1/events",
         json={"title": "T", "startAt": "2026-11-01T09:00:00Z", "endAt": "2026-11-01T17:00:00Z"},
     ).json()["id"]
-    assert client.patch(f"/api/v1/events/{event_id}", json={"attendees": 200}).status_code == 200
+    # A lone endAt means a parsed datetime is compared with the stored value.
+    assert client.patch(f"/api/v1/events/{event_id}", json={"endAt": "2026-11-01T18:00:00Z"}).status_code == 200
 
 
 def test_patch_still_rejects_an_inverted_interval(client):

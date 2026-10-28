@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .api.v1.router import router as api_v1_router
 from .core.config import settings
-from .repositories.event_repo import init_schema
+from .repositories.event_repo import close_pool, init_schema
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +28,7 @@ async def lifespan(_: FastAPI):
                 raise
             time.sleep(settings.db_connect_delay_seconds)
     yield
+    close_pool()
 
 
 app = FastAPI(

@@ -76,9 +76,15 @@ def connection() -> Iterator[Connection]:
 def init_schema() -> None:
     """Open the pool and create the schema idempotently."""
 
-    _pool.open(wait=True, timeout=settings.db_connect_delay_seconds * 5)
-    with _pool.connection() as conn:
-        conn.execute(_SCHEMA)
+    try:
+        _pool.open(wait=True, timeout=settings.db_connect_delay_seconds * 5)
+        with _pool.connection() as conn:
+            conn.execute(_SCHEMA)
+    except Exception:
+        # A pool that timed out while opening is closed for good; rebuild it so
+        # the caller can retry with a fresh one.
+        reset_pool()
+        raise
 
 
 def reset_pool() -> None:
@@ -87,6 +93,12 @@ def reset_pool() -> None:
     global _pool
     _pool.close()
     _pool = ConnectionPool(settings.database_url, min_size=1, max_size=10, open=False)
+
+
+def close_pool() -> None:
+    """Dispose the pool on application shutdown."""
+
+    _pool.close()
 
 
 def _upsert(event: dict[str, Any]) -> None:
