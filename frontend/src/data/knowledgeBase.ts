@@ -170,13 +170,13 @@ export const organizerChecklist: ChecklistItem[] = [
  {id:'o33',area:'Dostępność',areaId:'dostepnosc',label:'Zapewnij tłumaczenie lub napisy i opublikuj materiały w wersji dostępnej cyfrowo.',milestone:'T-0',minLevel:3}
 ];
 export const teamRoles: TeamRole[] = [
- {role:'Transport',contact:'[IMIĘ I NAZWISKO · TELEFON / E-MAIL]',tasks:['Rozkład pociągów i godzina rozpoczęcia','Wspólne przejazdy','Pytania do przewoźnika'],taskAreas:['dojazd','dojazd','dojazd']},
- {role:'Catering',contact:'[IMIĘ I NAZWISKO · TELEFON / E-MAIL]',tasks:['Porcje zgodne z rejestracją','Menu lokalne i sezonowe','Odbiór nadwyżek jedzenia'],taskAreas:['catering','catering','catering']},
- {role:'Materiały i gadżety',contact:'[IMIĘ I NAZWISKO · TELEFON / E-MAIL]',tasks:['Agenda online i kod QR','Smycze bez daty edycji','Zbiórka smyczy przy wyjściu'],taskAreas:['materialy','gadzety','gadzety']},
- {role:'Noclegi i obsługa',contact:'[IMIĘ I NAZWISKO · TELEFON / E-MAIL]',tasks:['Lista noclegów w zasięgu spaceru','Dojazd do noclegu bez samochodu','Forma zatrudnienia obsługi','Podział zadań w zespole'],taskAreas:['zakwaterowanie','zakwaterowanie','ludzie','ludzie']},
- {role:'Po wydarzeniu',contact:'[IMIĘ I NAZWISKO · TELEFON / E-MAIL]',tasks:['Segregacja na miejscu','Ważenie odpadów','Ankieta o dojeździe'],taskAreas:['po-wydarzeniu','po-wydarzeniu','po-wydarzeniu']},
- {role:'Miejsce i infrastruktura',contact:'[IMIĘ I NAZWISKO · TELEFON / E-MAIL]',tasks:['Wybór sali i dojazd do budynku','Sprzęt z zasobów obiektu','Odczyt liczników energii i wody'],taskAreas:['miejsce-i-sala','miejsce-i-sala','energia-i-woda']},
- {role:'Komunikacja i dostępność',contact:'[IMIĘ I NAZWISKO · TELEFON / E-MAIL]',tasks:['Promocja wyłącznie cyfrowa','Komunikat o zasadach dla uczestników','Trasa bez barier od przystanku','Materiały dostępne cyfrowo'],taskAreas:['komunikacja','komunikacja','dostepnosc','dostepnosc']}
+ {role:'Transport',tasks:['Rozkład pociągów i godzina rozpoczęcia','Wspólne przejazdy','Pytania do przewoźnika'],taskAreas:['dojazd','dojazd','dojazd']},
+ {role:'Catering',tasks:['Porcje zgodne z rejestracją','Menu lokalne i sezonowe','Odbiór nadwyżek jedzenia'],taskAreas:['catering','catering','catering']},
+ {role:'Materiały i gadżety',tasks:['Agenda online i kod QR','Smycze bez daty edycji','Zbiórka smyczy przy wyjściu'],taskAreas:['materialy','gadzety','gadzety']},
+ {role:'Noclegi i obsługa',tasks:['Lista noclegów w zasięgu spaceru','Dojazd do noclegu bez samochodu','Forma zatrudnienia obsługi','Podział zadań w zespole'],taskAreas:['zakwaterowanie','zakwaterowanie','ludzie','ludzie']},
+ {role:'Po wydarzeniu',tasks:['Segregacja na miejscu','Ważenie odpadów','Ankieta o dojeździe'],taskAreas:['po-wydarzeniu','po-wydarzeniu','po-wydarzeniu']},
+ {role:'Miejsce i infrastruktura',tasks:['Wybór sali i dojazd do budynku','Sprzęt z zasobów obiektu','Odczyt liczników energii i wody'],taskAreas:['miejsce-i-sala','miejsce-i-sala','energia-i-woda']},
+ {role:'Komunikacja i dostępność',tasks:['Promocja wyłącznie cyfrowa','Komunikat o zasadach dla uczestników','Trasa bez barier od przystanku','Materiały dostępne cyfrowo'],taskAreas:['komunikacja','komunikacja','dostepnosc','dostepnosc']}
 ];
 export const defaultPilot: PilotConfig = {city:'Miasto wydarzenia',radiusKm:20,eventStart:'09:30',prioritizeRail:true,prioritizeElectricBuses:true};
 

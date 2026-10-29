@@ -24,3 +24,7 @@
 .ustalenie-card small{margin-top:10px;display:inline-flex;align-items:center;gap:6px;color:var(--muted)}
 .public-page .check-row input:disabled,.public-page .team-card input:disabled{cursor:default}
 .share-hint{margin-top:10px;color:var(--muted);font-size:.92rem}
+.basics-panel > .button{justify-self:end}
+.level-card{display:flex;flex-direction:column;height:100%}
+.level-body{flex:1}
+.level-body > .button{margin-top:auto}

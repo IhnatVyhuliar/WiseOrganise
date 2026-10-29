@@ -108,7 +108,6 @@ export function PublicEventPage({ view }: { view: PublicEventView }) {
               return (
                 <article className="team-card" key={team.role}>
                   <div className="eyebrow">{team.role}</div>
-                  <h3>{team.contact}</h3>
                   <ul>
                     {team.tasks.map((task) => (
                       <li key={task}>

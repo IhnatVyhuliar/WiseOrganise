@@ -8,16 +8,16 @@ This is a React + TypeScript + Vite refactor of `frontend/WiseOrganise — aplik
 
 - `package.json`, `vite.config.ts`, `tsconfig.json`, `index.html`: Vite application shell and build configuration.
 - `src/main.tsx`, `src/App.tsx`: React bootstrap and view-level navigation state.
-- `src/types/index.ts`: `EventArea`, `OptionLevel`, `VendorCriterion`, checklist, team, and UŁ pilot interfaces, plus the API-facing `AreaQuestions`, `ContractClause`, `GreenwashingRisk`, `EcoSummary`, `EcoMotivator`, and `ImpactSummary` contracts.
+- `src/types/index.ts`: `EventArea`, `OptionLevel`, `VendorCriterion`, checklist, team, and lokalny pilot interfaces, plus the API-facing `AreaQuestions`, `ContractClause`, `GreenwashingRisk`, `EcoSummary`, `EcoMotivator`, and `ImpactSummary` contracts.
 - `src/lib/api.ts`: the single HTTP client for the FastAPI backend, plus `normalizeReference`, which reconciles the backend's snake_case and camelCase reference keys into one shape.
-- `src/data/knowledgeBase.ts`: the fixed 6R hierarchy, eleven lifecycle areas and their three levels, the universal provider verification criteria, the per-area `areaCriteria` layer, organizer/team checklists, and parameterized UŁ pilot defaults.
+- `src/data/knowledgeBase.ts`: the fixed 6R hierarchy, eleven lifecycle areas and their three levels, the universal provider verification criteria, the per-area `areaCriteria` layer, organizer/team checklists, and parameterized lokalny pilot defaults.
 - `src/data/knowledgeExtras.ts`: offline fallback copies of `CONTRACT_CLAUSES`, `GREENWASHING_RISKS`, and `ECO_SUMMARY`, kept word for word in sync with `backend/app/mocks/knowledge_mocks.py`.
 - `src/components/layout/Layout.tsx`: `Header`, `PageShell`, and `Stepper`.
 - `src/components/creator/CreatorPage.tsx`: event basics, lifecycle area navigation, expandable three-level cards, educational explanations, cost effects, provider questions, and selection state.
 - `src/components/criteria/CriteriaPage.tsx`: neutral vendor criteria, per-area supplier questions, the greenwashing risk matrix, and contract clauses with RFP questions. It contains no company list, score, or ranking.
 - `src/components/checklists/GuidePage.tsx`: master organizer checklist and role-based team checklists with local completion state.
 - `src/components/impact/ImpactPage.tsx`: the before/after footprint comparison, cost saving, eco motivator, and data provenance, all rendered from the backend's `ImpactSummary`.
-- `src/pages/StartPage.tsx`: product entry point and editable UŁ pilot controls.
+- `src/pages/StartPage.tsx`: product entry point and editable lokalny pilot controls.
 - `src/pages/RulesPage.tsx`: 6R hierarchy and boundary rules.
 - `src/styles/global.css`: extracted visual system using the bundle's Bricolage Grotesque, Atkinson Hyperlegible, and light neutral/green theme. It imports the view-scoped sheets below; Tailwind is installed but intentionally unused, so no utility classes appear in the components.
 - `src/styles/impact.css`, `src/styles/knowledge.css`, `src/styles/needs.css`: hand-written semantic styles for the impact view, the knowledge sections of the criteria view, and the needed-areas step, reusing the `panel`/`section-title`/`eyebrow`/`tag`/`notice` vocabulary from `global.css`.
@@ -76,11 +76,11 @@ The PDF is authoritative whenever the saved HTML and summary differ. Page refere
 - **Action:** Catering levels include local orchard/bakery examples, `Lokalność ≤ 20 km`, seasonality tags, and criteria that ask for origin and kilometres. Rules page makes these boundary rules visible.
 - **Code:** catering data and `Pochodzenie i odległość`/`Sezonowość` criteria in `knowledgeBase.ts`; `RulesPage.tsx`.
 
-### DEC-06: UŁ pilot defaults and transport priority
+### DEC-06: lokalny pilot defaults and transport priority
 
-- **Original HTML:** The start board had an illustrative UŁ journey but no explicit parameter controls.
-- **Mentor requirement:** Pages 1–2, 6–8: UŁ Łódź pilot, approximately 20 km analysis, rail/electric buses, and start time matched to train arrivals.
-- **Action:** `defaultPilot` seeds UŁ/Łódź, 20 km, 09:30, rail and electric-bus priorities. Start page makes radius and time editable so the open radius question can be resolved without code changes.
+- **Original HTML:** The start board had an illustrative lokalnego pilota journey but no explicit parameter controls.
+- **Mentor requirement:** Pages 1–2, 6–8: lokalnego pilota event location pilot, approximately 20 km analysis, rail/electric buses, and start time matched to train arrivals.
+- **Action:** `defaultPilot` seeds lokalny pilot, 20 km, 09:30, rail and electric-bus priorities. Start page makes radius and time editable so the open radius question can be resolved without code changes.
 - **Code:** `PilotConfig` and `defaultPilot` in `src/types/index.ts` (line 18) and `src/data/knowledgeBase.ts` (line 73); controls in `StartPage` (`src/pages/StartPage.tsx`, line 5).
 
 ### DEC-07: Dual checklists
@@ -150,18 +150,33 @@ The PDF is authoritative whenever the saved HTML and summary differ. Page refere
 - **Code:** `src/App.tsx` (`ensureEvent`), `src/pages/StartPage.tsx`, `src/components/creator/CreatorPage.tsx`, `src/lib/api.ts` (fallback pilot), `src/data/knowledgeBase.ts`.
 - **Gap worth closing:** nothing automated guards this on the frontend side; `test_no_pilot_references.py` still sweeps `backend/` only.
 
+### DEC-16: The frontend never exposes a raw HTTP error
+
+- **Origin:** merged from the parallel frontend track (upstream `7f98f68`), which numbered it DEC-14; renumbered here because DEC-14 was already taken by the share-link client above.
+- **Decision:** every HTTP failure and every malformed success response becomes a short, safe Polish sentence. A JSON `detail` reaches the screen only when it is a single clean line; HTML error pages, raw JSON, diagnostics and empty bodies are replaced by a fixed message per status.
+- **Action:** `src/lib/api.ts` owns `ApiError`, `messageForStatus`, `getApiErrorMessage`, response validation and a 30 s `AbortController` timeout that also forwards a caller's own signal. Known English backend details are translated to Polish through one table.
+- **Why it was kept over our own version:** our `errorMessage()` passed the raw body through on a non-JSON response, so an nginx or Caddy HTML error page would have been rendered verbatim. This version cannot do that, and it bounds the request as well.
+- **Code:** `src/lib/api.ts`.
+
+### DEC-17: Reference team roles carry no contact field
+
+- **Origin:** merged from the parallel frontend track, which numbered it DEC-20.
+- **Decision:** the team-role data behind `/reference-data` holds roles, tasks and areas only. `TeamRole` has no `contact` field, and `normalizeReference` drops one if the API ever sends it.
+- **Action:** `normalizeReference` strips `contact` from each `team_roles` entry. This is frontend hardening on top of the backend rule that `PublicEventView` never carries `contact`; the organizer's own guide still shows the contact stored on the e-guide's team checklists.
+- **Code:** `src/lib/api.ts` (`normalizeReference`).
+
 ## Open questions from PDF page 9 and current handling
 
 1. **“Prawdziwe firmy” vs “nie promujemy firm”:** current product shows only criteria and neutral supplier categories; no vendor directory. `CriteriaPage` can later accept a non-ranked category list without changing selection logic.
-2. **“W poradniku od razu numery”:** the guide now carries two kinds of numbers. Contacts stay as editable `[IMIĘ I NAZWISKO · TELEFON / E-MAIL]` placeholders in `teamRoles`, never invented; the quantitative numbers — the before/after kg CO2e range, the PLN saving, and the eco motivator — are computed in Python by `impact_service.build_impact` from `ECO_SUMMARY` and the chosen levels, served by `GET /events/{id}/impact`, and rendered by `ImpactPage` with a Polish disclaimer that they are demonstrative, not measured.
+2. **“W poradniku od razu numery”:** the guide carries deterministic impact numbers computed in Python by `impact_service.build_impact` from `ECO_SUMMARY` and the chosen levels, served by `GET /events/{id}/impact`, and rendered by `ImpactPage` with a Polish disclaimer that they are demonstrative, not measured.
 3. **“Nie patrzymy, kiedy konferencja się odbywa”:** lifecycle measurement is not limited to event hours, while `PilotConfig.eventStart` remains explicit for train alignment.
 4. **Biodegradable forks vs disposable cutlery:** current policy follows the PDF's strict hierarchy: reusable is above biodegradable, and biodegradable is only acceptable when actually composted. This is visible in catering data and the rules callout.
-5. **20 km radius scope:** current default applies it to the UŁ pilot's local analysis and is exposed as a single slider. It can later be split into participant and supplier radii in `PilotConfig`.
+5. **20 km radius scope:** current default applies it to the lokalny pilot's local analysis and is exposed as a single slider. It can later be split into participant and supplier radii in `PilotConfig`.
 6. **Before/after data source:** the impact view no longer asks the organizer to type numbers into a chart. It renders the backend's `ImpactSummary`, which names its sources explicitly: `emissionFactorSources` states that the emission factors are demonstrative, and `provenance` lists the three real-world sources the PDF asks about — the participant travel survey, the weighing of waste by fraction, and supplier invoices. Those labels live in one constant in `impact_service.py` and can be extended without touching `ImpactPage`. Replacing the demonstrative constants with measured data is a backend change only.
 7. **Gratyfikacje funding and verification:** current level 3 describes discount/game/electric shuttle but marks cost as “Wymaga budżetu”; implementation remains a parameterized future policy decision.
 8. **Event scale:** current checklists are role-based and size-neutral. A future `eventSize` field can select small/large templates in `knowledgeBase.ts`.
 9. **Which 6R list:** current tool adopts the exact six-item order printed on PDF page 3 and keeps it in one source constant.
-10. **After the pilot:** current pilot controls default to Łódź but are editable, so another city/university can be configured without rewriting area content.
+10. **After the pilot:** current pilot controls default to event location but are editable, so another city/university can be configured without rewriting area content.
 
 ## Validation
 

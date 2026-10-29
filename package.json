@@ -1,0 +1,15 @@
+{
+  "name": "wiseorganise",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WiseOrganise sustainable event planning platform",
+  "engines": {
+    "node": ">=18.18.0"
+  },
+  "scripts": {
+    "frontend:install": "npm --prefix frontend install",
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "preview": "npm --prefix frontend run preview"
+  }
+}

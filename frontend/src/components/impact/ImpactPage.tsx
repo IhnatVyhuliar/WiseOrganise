@@ -20,13 +20,13 @@ function RangeBar({ variant, label, min, max, scaleMax }: { variant: 'before' | 
   );
 }
 
-export function ImpactPage({ eguide, impact, ecoSummary }: { eguide?: any; impact: ImpactSummary | null; ecoSummary: EcoSummary | null }) {
+export function ImpactPage({ eguide, impact, ecoSummary, embedded = false }: { eguide?: any; impact: ImpactSummary | null; ecoSummary: EcoSummary | null; embedded?: boolean }) {
   const hasGuide = Boolean(eguide);
   const disclaimer = 'Liczby poniżej są demonstracyjne. Powstają z wybranych poziomów i stałej bazy wiedzy, nie z pomiaru tego wydarzenia.';
 
   if (!impact) {
     return (
-      <main className="page impact-page">
+      <main className={embedded ? 'impact-page impact-page-embedded' : 'page impact-page'}>
         <div className="page-heading">
           <div>
             <div className="eyebrow">Pomiar</div>
@@ -66,7 +66,7 @@ export function ImpactPage({ eguide, impact, ecoSummary }: { eguide?: any; impac
   const savedMax = Math.max(0, impact.kgCo2eMax - impact.optimizedKgCo2eMax);
 
   return (
-    <main className="page impact-page">
+    <main className={embedded ? 'impact-page impact-page-embedded' : 'page impact-page'}>
       <div className="page-heading">
         <div>
           <div className="eyebrow">Pomiar</div>

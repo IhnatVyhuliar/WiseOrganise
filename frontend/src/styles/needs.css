@@ -14,7 +14,7 @@
 
 .needs-summary{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:.95rem;color:#4d5a52}
 .needs-summary strong{color:var(--ink)}
-.needs-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.needs-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
 
 /* Guide: one block of organizer tasks per lifecycle milestone. */
 .guide-page > .notice{margin-bottom:20px}
@@ -48,6 +48,7 @@
 .needs-ai-note.waiting { align-items: center; }
 
 .needs-ai-note.waiting svg { flex: none; color: var(--green-dark); }
+
 
 .spin { animation: spin 1s linear infinite; }
 
