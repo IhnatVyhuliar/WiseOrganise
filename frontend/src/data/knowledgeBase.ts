@@ -47,7 +47,7 @@ export const eventAreas: EventArea[] = [
  ]},
  {id:'miejsce-i-sala',name:'Miejsce i sala',stage:'Przed',lead:'Dobre miejsce znosi przejazdy między punktami i przesądza o odpadach, energii i wodzie na całym wydarzeniu.',providerQuestions:['Jak daleko jest najbliższy przystanek i czy dojście jest wygodne?','Jak obiekt gospodaruje odpadami, energią i wodą?','Czy można skorzystać z wyposażenia obiektu zamiast wynajmować osobno?'],levels:[
   {level:1,label:'minimum',description:'Sala w budynku dostępnym komunikacją zbiorową, bez przejazdów między punktami.',why:'Jeden dobrze skomunikowany adres znosi potrzebę dodatkowych przejazdów w trakcie wydarzenia.',cost:'Bez dodatkowych kosztów',tags:['Transport niskoemisyjny','Lokalność'],sixR:['Przemyśl']},
-  {level:2,label:'lepiej',description:'Całe wydarzenie w jednym budynku, sala dobrana do liczby osób, wyposażenie z zasobów uczelni.',why:'Sala na miarę i sprzęt, który już jest, to mniej ogrzewania, mniej transportu i niższy koszt.',cost:'Zależy od oferty',tags:['Gospodarka cyrkularna','6R Ograniczaj'],sixR:['Ograniczaj']},
+  {level:2,label:'lepiej',description:'Całe wydarzenie w jednym budynku, sala dobrana do liczby osób, wyposażenie z zasobów obiektu.',why:'Sala na miarę i sprzęt, który już jest, to mniej ogrzewania, mniej transportu i niższy koszt.',cost:'Zależy od oferty',tags:['Gospodarka cyrkularna','6R Ograniczaj'],sixR:['Ograniczaj']},
   {level:3,label:'najlepiej',description:'Obiekt wybrany według kryteriów: odpady, energia, woda, dostęp bez samochodu i wielokrotne użycie wyposażenia.',why:'Miejsce przesądza o większości śladu wydarzenia, więc warto wybierać je tak starannie jak catering.',cost:'Zależy od oferty',tags:['Kryteria dostawców','Cały cykl życia'],sixR:['Przemyśl','Używaj ponownie']}
  ]},
  {id:'energia-i-woda',name:'Energia i woda',stage:'W trakcie',lead:'Zużycie prądu i wody rzadko ktoś liczy, a to jedyne dane, które da się odczytać wprost z licznika.',providerQuestions:['Czy da się odczytać zużycie energii w salach wydarzenia?','Czy jest dostęp do wody z kranu lub dystrybutora?','Czy sprzęt nagłośnieniowy i AV można wypożyczyć zamiast kupować?'],levels:[
@@ -157,7 +157,7 @@ export const organizerChecklist: ChecklistItem[] = [
  {id:'o20',area:'Materiały',areaId:'materialy',label:'Udostępnij materiały online także po wydarzeniu, bez wersji drukowanej.',milestone:'T-7',minLevel:3},
  {id:'o21',area:'Ludzie',areaId:'ludzie',label:'Potwierdź, że obsługa jest lokalna i dojeżdża bez samochodu.',milestone:'T-30',minLevel:3},
  {id:'o22',area:'Miejsce i sala',areaId:'miejsce-i-sala',label:'Wybierz salę w budynku z dobrym dojazdem komunikacją zbiorową.',milestone:'T-60',minLevel:1},
- {id:'o23',area:'Miejsce i sala',areaId:'miejsce-i-sala',label:'Potwierdź, że całe wydarzenie zmieści się w jednym budynku, i ustal sprzęt z zasobów uczelni.',milestone:'T-30',minLevel:2},
+ {id:'o23',area:'Miejsce i sala',areaId:'miejsce-i-sala',label:'Potwierdź, że całe wydarzenie zmieści się w jednym budynku, i ustal sprzęt z zasobów obiektu.',milestone:'T-30',minLevel:2},
  {id:'o24',area:'Miejsce i sala',areaId:'miejsce-i-sala',label:'Zweryfikuj obiekt według kryteriów: odpady, energia, woda i dostęp bez samochodu.',milestone:'T-30',minLevel:3},
  {id:'o25',area:'Energia i woda',areaId:'energia-i-woda',label:'Ustal, kto gasi światło i wyłącza sprzęt w nieużywanych salach.',milestone:'T-7',minLevel:1},
  {id:'o26',area:'Energia i woda',areaId:'energia-i-woda',label:'Zamów dystrybutory wody i przypomnij uczestnikom o własnych kubkach.',milestone:'T-7',minLevel:2},
