@@ -24,3 +24,7 @@ dist/
 # Any certificate or key material that lands in the project; never commit it.
 certs/
 .superpowers/
+
+# Agent scratch space: .claude/ holds live git worktrees, never product code.
+.claude/
+.playwright-mcp/
