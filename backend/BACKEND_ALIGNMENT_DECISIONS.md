@@ -69,6 +69,8 @@ The table is the whole surface: thirteen paths, three of them removed by DEC-21.
   (7) `ai_jobs` imported `TimeoutError as FutureTimeout` without using it; a bounded call that expires now has its own handler and log line.
   Governs `services/eguide_service.py`, `services/options_service.py`, `services/event_service.py`, `services/suggestion_service.py`, `workers/ai_jobs.py`, `repositories/event_repo.py`, `main.py`, `tests/`, `requirements.txt`.
 
+- **DEC-26 The public view contract is unchanged, and now has a client.** The sharing contract from DEC-17 was complete and tested on this side but unused: no caller ever requested `GET /api/v1/public/events/{slug}`, so the share link resolved to the SPA's start screen. The frontend gained the missing client (frontend DEC-14) with no change to `schemas/public.py`, `services/public_view_service.py` or the endpoint — the whitelist, the canonical `ustalenia` order and the Polish 404 are as DEC-17 left them. Two consequences are now load-bearing rather than theoretical, and must stay: the endpoint performs no write and no model call, so a visitor cannot mutate the event or spend a Gemini call; and the response carries no `raw_description`, `participant_origins` or `contact`, which the public page would otherwise display. Deployment note: a host serving a backend image from before DEC-17 has no `public` route at all, and the share link cannot work there regardless of the frontend.
+
 ## File-level decision log
 
 - `app/schemas/enums.py`: added lifecycle, area, 6R, and cost enums; repaired Polish values.

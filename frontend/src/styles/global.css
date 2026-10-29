@@ -10,3 +10,17 @@
 .api-error{margin:0 0 18px;padding:14px 17px;border-radius:13px;background:#fdecea;border:1px solid #f0b4ad;color:#7d1d12;font-weight:600}
 .loading-state{padding:60px 0;text-align:center;color:var(--muted)}
 .button:disabled{opacity:.6;cursor:progress}
+
+/* Share link in the guide view, and the read-only public page behind it. */
+.share-link{margin-top:26px;padding:20px 22px;border-radius:16px;background:var(--white);border:1px solid var(--line)}
+.share-row{margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.share-input{flex:1 1 280px;min-width:0;padding:11px 13px;border-radius:11px;border:1px solid var(--line);font:inherit;font-size:.95rem;background:var(--soft);color:inherit}
+.public-meta{margin:0 0 24px;display:flex;gap:10px 22px;flex-wrap:wrap;color:var(--muted)}
+.public-meta span{display:inline-flex;align-items:center;gap:7px;font-weight:600}
+.ustalenia-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.ustalenie-card{padding:17px 19px;border-radius:14px;background:var(--white);border:1px solid var(--line)}
+.ustalenie-card h3{margin:4px 0 8px;font-size:1.05rem;text-transform:capitalize}
+.ustalenie-card p{margin:0;color:inherit}
+.ustalenie-card small{margin-top:10px;display:inline-flex;align-items:center;gap:6px;color:var(--muted)}
+.public-page .check-row input:disabled,.public-page .team-card input:disabled{cursor:default}
+.share-hint{margin-top:10px;color:var(--muted);font-size:.92rem}

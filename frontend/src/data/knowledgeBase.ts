@@ -10,7 +10,7 @@ export const sixRHierarchy: { rank: number; name: SixR; description: string }[] 
 ];
 const tag = (name: string) => [name];
 export const eventAreas: EventArea[] = [
- {id:'dojazd',name:'Dojazd',stage:'Przed',lead:'Dojazd uczestników zwykle waży najwięcej. Pilot UŁ łączy kolej, autobusy elektryczne i godzinę startu dopasowaną do rozkładu.',providerQuestions:['Czy przewoźnik ma pojazdy elektryczne?','Czy kursy można dopasować do godzin wydarzenia?','Czy jest oferta grupowa?'],levels:[
+ {id:'dojazd',name:'Dojazd',stage:'Przed',lead:'Dojazd uczestników zwykle waży najwięcej. Połącz kolej, autobusy elektryczne i godzinę startu dopasowaną do rozkładu.',providerQuestions:['Czy przewoźnik ma pojazdy elektryczne?','Czy kursy można dopasować do godzin wydarzenia?','Czy jest oferta grupowa?'],levels:[
   {level:1,label:'minimum',description:'Informacja o dojazdach transportem zbiorowym w zaproszeniu i na stronie.',why:'Jasna informacja od początku pomaga wybrać kolej lub autobus zamiast samochodu.',cost:'Bez dodatkowych kosztów',tags:tag('Transport niskoemisyjny'),sixR:['Przemyśl']},
   {level:2,label:'lepiej',description:'Start i koniec dopasowane do rozkładu pociągów oraz organizacja wspólnych przejazdów.',why:'Godzina wydarzenia nie wyklucza kolei, a wspólny przejazd zmniejsza liczbę aut.',cost:'Bez dodatkowych kosztów',tags:['Transport niskoemisyjny','Cały cykl życia'],sixR:['Ograniczaj']},
   {level:3,label:'najlepiej',description:'Zniżka za dojazd zbiorowy, gra dla uczestników i autobus elektryczny z dworca.',why:'Zachęta sprawia, że transport zbiorowy jest wygodny i opłacalny.',cost:'Wymaga budżetu',tags:['Transport niskoemisyjny','Zachęty'],sixR:['Ograniczaj']}
@@ -22,7 +22,7 @@ export const eventAreas: EventArea[] = [
  ]},
  {id:'catering',name:'Catering',stage:'W trakcie',lead:'Lokalne i sezonowe jedzenie, porcje według rejestracji oraz naczynia wielorazowe łączą wpływ z oszczędnością.',providerQuestions:['Skąd są składniki i ile kilometrów jadą?','Ile składników jest sezonowych?','Czy naczynia są wielorazowe?','Co dzieje się z nadwyżkami jedzenia?'],note:'Naczynia wielorazowe stoją wyżej w 6R niż biodegradowalne jednorazówki. Biodegradowalne mają sens tylko z realnym kompostowaniem.',levels:[
   {level:1,label:'minimum',description:'Porcje według rejestracji i woda z dystrybutorów zamiast butelek.',why:'Dokładne porcje ograniczają odpady i koszt zamówienia.',cost:'Obniża koszt',tags:['6R Ograniczaj','6R Rezygnuj'],sixR:['Ograniczaj']},
-  {level:2,label:'lepiej',description:'Produkty lokalne i sezonowe, bez egzotycznych składników, oraz naczynia wielorazowe.',why:'Jabłka z sadu pod Łodzią zastępują produkty wożone z daleka.',cost:'Zależy od oferty',tags:['Lokalność','Sezonowość','6R Używaj ponownie'],sixR:['Używaj ponownie']},
+  {level:2,label:'lepiej',description:'Produkty lokalne i sezonowe, bez egzotycznych składników, oraz naczynia wielorazowe.',why:'Jabłka z lokalnego sadu zastępują produkty wożone z daleka.',cost:'Zależy od oferty',tags:['Lokalność','Sezonowość','6R Używaj ponownie'],sixR:['Używaj ponownie']},
   {level:3,label:'najlepiej',description:'Dostawcy z najbliższej okolicy, bez jednorazowych sztućców i z planem na nadwyżki.',why:'Krótka dostawa, brak odpadów u źródła i ustalony odbiór nadwyżek domykają obieg.',cost:'Zależy od oferty',tags:['Lokalność ≤ 20 km','6R Rezygnuj','Gospodarka cyrkularna'],sixR:['Rezygnuj','Używaj ponownie']}
  ]},
  {id:'materialy',name:'Materiały',stage:'W trakcie',lead:'Każda niewydrukowana strona to mniej zużytych zasobów i niższy koszt.',providerQuestions:['Czy ta rzecz jest w ogóle potrzebna?','Z czego jest zrobiona?','Czy da się jej użyć ponownie?'],levels:[
@@ -135,7 +135,7 @@ export const areaCriteria: AreaCriteria[] = [
  ]}
 ];
 export const organizerChecklist: ChecklistItem[] = [
- {id:'o1',area:'Dojazd',areaId:'dojazd',label:'Sprawdź połączenia kolejowe i autobusowe do UŁ oraz dopasuj godzinę rozpoczęcia do pociągów.',milestone:'T-60',minLevel:1},
+ {id:'o1',area:'Dojazd',areaId:'dojazd',label:'Sprawdź połączenia kolejowe i autobusowe do miejsca wydarzenia oraz dopasuj godzinę rozpoczęcia do pociągów.',milestone:'T-60',minLevel:1},
  {id:'o2',area:'Dojazd',areaId:'dojazd',label:'Dodaj transport zbiorowy do zaproszenia i strony wydarzenia.',milestone:'T-30',minLevel:1},
  {id:'o3',area:'Dojazd',areaId:'dojazd',label:'Uruchom zapisy na wspólne przejazdy.',milestone:'T-30',minLevel:2},
  {id:'o4',area:'Zakwaterowanie',areaId:'zakwaterowanie',label:'Przygotuj listę noclegów w zasięgu spaceru lub komunikacji.',milestone:'T-60',minLevel:1},
@@ -178,7 +178,7 @@ export const teamRoles: TeamRole[] = [
  {role:'Miejsce i infrastruktura',contact:'[IMIĘ I NAZWISKO · TELEFON / E-MAIL]',tasks:['Wybór sali i dojazd do budynku','Sprzęt z zasobów obiektu','Odczyt liczników energii i wody'],taskAreas:['miejsce-i-sala','miejsce-i-sala','energia-i-woda']},
  {role:'Komunikacja i dostępność',contact:'[IMIĘ I NAZWISKO · TELEFON / E-MAIL]',tasks:['Promocja wyłącznie cyfrowa','Komunikat o zasadach dla uczestników','Trasa bez barier od przystanku','Materiały dostępne cyfrowo'],taskAreas:['komunikacja','komunikacja','dostepnosc','dostepnosc']}
 ];
-export const defaultPilot: PilotConfig = {city:'Uniwersytet Łódzki, Łódź',radiusKm:20,eventStart:'09:30',prioritizeRail:true,prioritizeElectricBuses:true};
+export const defaultPilot: PilotConfig = {city:'Miasto wydarzenia',radiusKm:20,eventStart:'09:30',prioritizeRail:true,prioritizeElectricBuses:true};
 
 // Mirrors knowledge_mocks.py: every area carries the knowledge needed to judge
 // its own suppliers, so the creator can show it next to the choice it applies to.
