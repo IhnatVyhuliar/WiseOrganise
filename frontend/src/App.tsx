@@ -58,23 +58,24 @@ function App() {
   // One path for both entry points. ensureEvent comes first so the guide button
   // also works when the organizer opened the guide from the header navigation
   // without ever walking through the creator.
-  const runGuide = (navigate = false) => guard(async () => {
+  // Only the creator starts a guide now, and it always lands on the guide view.
+  const runGuide = () => guard(async () => {
     setBusy(true);
     try {
       const current = await ensureEvent();
       setEguide(await api.generateEguide(current.id));
       setImpact(await api.impact(current.id));
-      if (navigate) setView('guide');
+      setView('guide');
     } finally { setBusy(false); }
   }, 'Nie udało się wygenerować poradnika.');
   let page: ReactNode;
   if (loading) page = <main className="page"><div className="loading-state">{publicSlug ? 'Ładuję plan wydarzenia.' : 'Ładuję bazę wiedzy.'}</div></main>;
   else if (view === 'public') page = publicView ? <PublicEventPage view={publicView} /> : <PublicNotFound message={publicError} />;
   else if (view === 'start') page = <StartPage onNavigate={setView} pilot={reference.default_pilot} onStart={async (payload) => { await ensureEvent(payload); setView('creator'); }} />;
-  else if (view === 'creator') page = <CreatorPage onNavigate={setView} areas={reference.areas} event={event} ensureEvent={ensureEvent} saveEvent={saveEvent} neededAreas={neededAreas} onNeededAreas={onNeededAreas} onGuide={() => runGuide(true)} />;
+  else if (view === 'creator') page = <CreatorPage onNavigate={setView} areas={reference.areas} event={event} ensureEvent={ensureEvent} saveEvent={saveEvent} neededAreas={neededAreas} onNeededAreas={onNeededAreas} onGuide={() => runGuide()} />;
   else if (view === 'rules') page = <RulesPage rules={reference.six_r} />;
   else if (view === 'criteria') page = <CriteriaPage criteria={reference.criteria} areaQuestions={reference.area_questions} contractClauses={reference.contract_clauses} greenwashingRisks={reference.greenwashing_risks} />;
-  else if (view === 'guide') page = <GuidePage checklist={reference.organizer_checklist} roles={reference.team_roles} eguide={eguide} eventId={event?.id} shareUrl={event?.shareUrl} onNavigate={setView} onToggleDone={onToggleDone} onGenerate={() => runGuide()} busy={busy} hasGuide={!!eguide} />;
+  else if (view === 'guide') page = <GuidePage checklist={reference.organizer_checklist} roles={reference.team_roles} eguide={eguide} eventId={event?.id} shareUrl={event?.shareUrl} onNavigate={setView} onToggleDone={onToggleDone} hasGuide={!!eguide} />;
   else page = <ImpactPage eguide={eguide} impact={impact} ecoSummary={reference.eco_summary} />;
   return <PageShell view={view} onNavigate={setView} chrome={view === 'public' ? 'minimal' : 'full'}>{error && view !== 'public' && <div className="api-error" role="alert">{error}</div>}{page}</PageShell>;
 }
