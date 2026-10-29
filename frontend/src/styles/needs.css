@@ -14,7 +14,7 @@
 
 .needs-summary{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:.95rem;color:#4d5a52}
 .needs-summary strong{color:var(--ink)}
-.needs-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.needs-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
 
 /* Guide: one block of organizer tasks per lifecycle milestone. */
 .guide-page > .notice{margin-bottom:20px}
@@ -48,6 +48,14 @@
 .needs-ai-note.waiting { align-items: center; }
 
 .needs-ai-note.waiting svg { flex: none; color: var(--green-dark); }
+
+.guide-share,.guide-decisions{margin-top:28px;padding:22px;border:1px solid var(--line);border-radius:18px;background:#fff;display:grid;gap:14px}
+.share-link-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.share-link{color:var(--green);word-break:break-all;user-select:text}.share-confirmation{color:var(--muted)}
+.public-event-page .guide-decisions,.public-event-page .checklist-section,.public-event-page .team-section{margin-top:28px}
+.public-check-row{cursor:default;pointer-events:none}.public-check-row input{display:none}.public-check-indicator{display:inline-flex;flex:0 0 auto;color:var(--muted)}.public-check-row.done .public-check-indicator{color:var(--green)}
+.public-event-page .team-card li{display:flex;align-items:flex-start;gap:8px}.public-impact-heading{margin:32px 0 0}.public-event-page .impact-page{padding:0;max-width:none}.public-event-page .impact-page-embedded{padding-top:0}.empty-copy{color:var(--muted);margin:0}
+.decisions-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}.decision-card{border:1px solid var(--line);border-radius:14px;padding:16px;background:var(--soft)}.decision-card h3{margin:4px 0 12px}.decision-card dl{display:grid;gap:10px;margin:0}.decision-card dl>div{display:grid;gap:2px}.decision-card dt{font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}.decision-card dd{margin:0;color:var(--ink)}
+.guide-ai-status.in_progress{background:var(--soft);color:var(--ink)}.guide-ai-status.in_progress p{color:var(--ink)}.guide-ai-status.ready{background:var(--soft);color:var(--green)}.guide-ai-status.ready p{color:var(--green)}
 
 .spin { animation: spin 1s linear infinite; }
 

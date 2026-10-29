@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Check, ChevronDown, Info, ListChecks, Loader2, Sparkles } from 'lucide-react';
-import type { AreaSuggestionResponse } from '../../lib/api';
+import { Check, Info, ListChecks, Loader2, Sparkles } from 'lucide-react';
+import { getApiErrorMessage, type AreaSuggestionResponse } from '../../lib/api';
 import type { AreaId, EventArea } from '../../types';
 import '../../styles/needs.css';
 
@@ -22,8 +22,8 @@ export function NeedsStep({ areas, value, onConfirm, onBack, onSuggest }: { area
         const proposed = result.suggestions.map((item) => item.areaId);
         setPicked(allIds.filter((id) => proposed.includes(id)));
       }
-    } catch {
-      setSuggestion({ available: false, message: 'Nie udało się połączyć z serwerem. Zaznacz obszary samodzielnie poniżej.', suggestions: [] });
+    } catch (error) {
+      setSuggestion({ available: false, message: getApiErrorMessage(error, 'Podpowiedzi AI są niedostępne. Zaznacz obszary samodzielnie poniżej.'), suggestions: [] });
     } finally {
       setSuggesting(false);
     }
@@ -50,7 +50,7 @@ export function NeedsStep({ areas, value, onConfirm, onBack, onSuggest }: { area
     <div className="needs-summary"><strong>{picked.length} z {areas.length}</strong><span>obszarów w Twoim wydarzeniu</span>{!picked.length && <span className="warning">Zaznacz przynajmniej jeden obszar.</span>}</div>
     <div className="needs-actions">
       <button className="button secondary" onClick={onBack}>Wstecz</button>
-      <button className="button primary" onClick={confirm} disabled={!picked.length || saving}>{saving ? 'Zapisuję…' : <>Przejdź do opcji <ChevronDown size={17} /></>}</button>
+      <button className="button primary" onClick={confirm} disabled={!picked.length || saving}>{saving ? 'Zapisuję…' : <>Przejdź do opcji →</>}</button>
     </div>
   </section>;
 }
