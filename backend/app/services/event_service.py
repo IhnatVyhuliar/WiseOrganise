@@ -6,11 +6,12 @@ from copy import deepcopy
 from typing import Any
 
 from ..mocks.checklist_mocks import checklist_fixtures
-from ..repositories.memory_repo import create_event_record, save_event
-from ..schemas import ChecklistItem, ChecklistResponse, EventCreate, EventResponse, EventStatus
+from ..repositories.event_repo import create_event_record, ensure_slug, save_event
+from ..schemas import ChecklistItem, ChecklistResponse, ChecklistUpdatePayload, EventCreate, EventResponse, EventStatus
 from ..core.config import settings
 from ..integrations.gemini_client import generate_structured
 from .ai_context import build_analyze_prompt
+from .eguide_service import invalidate_eguide
 
 
 # Editing these invalidates the legacy conditional checklist.
@@ -24,8 +25,12 @@ _GUIDE_FIELDS = ("needed_areas", "attendees", "pilot", "event_date", "location")
 def public_event(event: dict[str, Any]) -> EventResponse:
     """Serialize an internal event record to its public response model."""
 
+    ensure_slug(event)
     fields = set(EventResponse.model_fields)
-    return EventResponse.model_validate({key: value for key, value in event.items() if key in fields})
+    data = {key: value for key, value in event.items() if key in fields}
+    # share_url is derived from the slug, never stored on the record.
+    data["share_url"] = f"{settings.public_base_url.rstrip('/')}/w/{event['slug']}"
+    return EventResponse.model_validate(data)
 
 
 def create_event(payload: EventCreate) -> EventResponse:
@@ -50,7 +55,7 @@ def update_event(event: dict[str, Any], changes: dict[str, Any]) -> EventRespons
     if invalidates_guide:
         event["recommendations"] = {}
         event["selected_options"] = {}
-        event["eguide"] = None
+        invalidate_eguide(event)
     if invalidates_checklist or invalidates_guide:
         event["status"] = EventStatus.CHECKLIST_PENDING if event.get("checklist") is not None else EventStatus.DRAFT
     return public_event(save_event(event))
@@ -78,7 +83,7 @@ def analyze_event(event: dict[str, Any]) -> ChecklistResponse:
             item["is_completed"] = False
             event["checklist"].append(item)
     event["recommendations"] = {}
-    event["eguide"] = None
+    invalidate_eguide(event)
     event["status"] = EventStatus.CHECKLIST_PENDING
     save_event(event)
     return checklist_response(event)
@@ -94,3 +99,27 @@ def checklist_response(event: dict[str, Any]) -> ChecklistResponse:
         items=[ChecklistItem.model_validate(item) for item in event["checklist"]],
         **event["weights"],
     )
+
+
+def update_checklist(event: dict[str, Any], payload: ChecklistUpdatePayload) -> None:
+    """Apply legacy checklist answers while invalidating derived content."""
+    if event.get("checklist") is None:
+        raise LookupError("Analyze the event before updating its checklist")
+    items_by_id = {item["id"]: item for item in event["checklist"]}
+    for update in payload.items:
+        item = items_by_id.get(update.id)
+        if item is None:
+            raise KeyError(update.id)
+        if update.accept_suggestion:
+            item["user_response"] = item["suggested_response"]
+        elif "user_response" in update.model_fields_set:
+            item["user_response"] = update.user_response
+        if update.priority is not None:
+            item["priority"] = update.priority
+        item["is_completed"] = item["user_response"] is not None
+    weights = payload.resolved_weights()
+    if weights is not None:
+        event["weights"] = weights.model_dump()
+    event["recommendations"] = {}
+    invalidate_eguide(event)
+    save_event(event)

@@ -6,7 +6,7 @@ from pydantic import Field, model_validator
 
 from . import APIModel
 
-from .enums import AreaId, Category, FlagColor, Milestone
+from .enums import AiStatus, AreaId, FlagColor, Milestone
 
 
 
@@ -96,8 +96,6 @@ class TeamRoleChecklist(APIModel):
 
     role: str
 
-    contact: str
-
     tasks: list[str]
 
     completed_tasks: list[str] = Field(default_factory=list)
@@ -138,23 +136,21 @@ class ContractClause(APIModel):
 
 
 
-class SelectedVendorSummary(APIModel):
+class Ustalenie(APIModel):
 
-    """Compatibility projection; concrete brands are never promoted by the API."""
+    """One arrangement: the level the organizer chose for a lifecycle area."""
 
-    rec_id: str
+    area_id: AreaId
 
-    vendor_id: str
+    area_name: str
 
-    name: str
+    level: int
 
-    category: Category
-
-    total_score: float = Field(ge=0, le=100)
-
-    is_selected: bool
+    level_label: str
 
     justification: str
+
+    cost_effect: str
 
 
 
@@ -176,7 +172,9 @@ class EGuideResponse(APIModel):
 
     contract_clauses_and_questions: list[ContractClause] = Field(default_factory=list)
 
-    selected_vendors_summary: list[SelectedVendorSummary] = Field(default_factory=list)
+    ustalenia: list[Ustalenie] = Field(default_factory=list)
+
+    ai_status: AiStatus = AiStatus.DISABLED
 
 
 

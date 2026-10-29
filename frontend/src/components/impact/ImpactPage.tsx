@@ -1,8 +1,6 @@
 import { AlertTriangle, ArrowRight, BarChart3, ClipboardCheck, FileText, Leaf, Sparkles, TreePine, Wallet } from 'lucide-react';
 import type { EcoSummary, ImpactSummary } from '../../types';
-
-const formatKg = (value: number) => `${value.toLocaleString('pl-PL', { maximumFractionDigits: 1 })} kg CO2e`;
-const formatPln = (value: number) => `${value.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł`;
+import { formatKg, formatPln } from '../../lib/format';
 
 /** One before/after range drawn as a CSS band, scaled against the largest value shown. */
 function RangeBar({ variant, label, min, max, scaleMax }: { variant: 'before' | 'after'; label: string; min: number; max: number; scaleMax: number }) {

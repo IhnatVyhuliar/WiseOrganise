@@ -14,7 +14,8 @@ from ..mocks.knowledge_mocks import EVENT_AREAS
 from ..schemas import AreaSuggestion, AreaSuggestionResponse
 from ..core.config import settings
 from ..integrations.gemini_client import generate_structured
-from .ai_context import build_area_suggestion_prompt
+from ..repositories.event_repo import merge_event_fields
+from .ai_context import build_area_suggestion_prompt, event_facts, facts_hash
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,18 @@ def suggest_areas(event: dict[str, Any]) -> AreaSuggestionResponse:
     description = str(event.get("raw_description") or "").strip()
     if not description:
         return AreaSuggestionResponse(available=False, message=_NO_DESCRIPTION)
+    try:
+        digest = facts_hash(event_facts(event))
+    except Exception:
+        digest = None
+        logger.warning("Could not fingerprint the event, skipping the suggestion cache", exc_info=True)
+    cached = event.get("suggestion_cache")
+    if digest is not None and isinstance(cached, dict) and cached.get("hash") == digest:
+        try:
+            return AreaSuggestionResponse.model_validate(cached["response"])
+        except Exception:
+            # Only the stored entry is bad: keep the digest so the next good result overwrites it.
+            logger.warning("Ignoring an unreadable suggestion cache", exc_info=True)
     if not settings.gemini_enabled:
         return AreaSuggestionResponse(available=False, message=_NO_MODEL)
     try:
@@ -67,4 +80,18 @@ def suggest_areas(event: dict[str, Any]) -> AreaSuggestionResponse:
     ]
     if not kept:
         return AreaSuggestionResponse(available=False, message=_FAILED)
-    return AreaSuggestionResponse(available=True, message=_OK, suggestions=kept)
+    order = {area["id"]: position for position, area in enumerate(EVENT_AREAS)}
+    kept.sort(key=lambda item: order[str(getattr(item.area_id, "value", item.area_id))])
+    response = AreaSuggestionResponse(available=True, message=_OK, suggestions=kept)
+    if digest is not None:
+        try:
+            # The model call can take seconds; write only this one field, so a
+            # guide, nonce or edit stored meanwhile is not reverted by this
+            # request's stale copy of the record.
+            merge_event_fields(
+                event["id"],
+                {"suggestion_cache": {"hash": digest, "response": response.model_dump(by_alias=False)}},
+            )
+        except Exception:
+            logger.warning("Could not store the area suggestion cache", exc_info=True)
+    return response

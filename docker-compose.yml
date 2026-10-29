@@ -6,8 +6,30 @@ services:
       GEMINI_MODEL_MAIN: ${GEMINI_MODEL_MAIN:-gemini-3.8-flash}
       GEMINI_MODEL_LITE: ${GEMINI_MODEL_LITE:-gemini-3.5-flash-lite}
       USE_MOCK_AI: ${USE_MOCK_AI:-true}
+      GEMINI_TIMEOUT_SECONDS: ${GEMINI_TIMEOUT_SECONDS:-45}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://wiseorganise.reachit.space}
+      DB_CONNECT_RETRIES: ${DB_CONNECT_RETRIES:-30}
+      DB_CONNECT_DELAY_SECONDS: ${DB_CONNECT_DELAY_SECONDS:-2}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://wiseorganise:wiseorganise@db:5432/wiseorganise}
     expose:
       - "8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [wiseorganise]
+    restart: unless-stopped
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: wiseorganise
+      POSTGRES_USER: wiseorganise
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wiseorganise}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wiseorganise -d wiseorganise"]
+      interval: 5s
+      retries: 10
     networks: [wiseorganise]
     restart: unless-stopped
   frontend:
@@ -19,7 +41,7 @@ services:
   caddy:
     image: caddy:2.9-alpine
     ports:
-      - "4540:4540"
+      - "${EDGE_BIND_ADDR:-127.0.0.1}:4540:4540"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -33,5 +55,6 @@ networks:
     driver: bridge
 
 volumes:
+  pgdata:
   caddy_data:
   caddy_config:

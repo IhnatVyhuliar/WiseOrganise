@@ -22,12 +22,21 @@ class Settings(BaseSettings):
             "http://localhost:5173",
             "http://127.0.0.1:5173",
             "http://127.0.0.1:3000",
+            "https://wiseorganise.reachit.space",
         ]
     )
     gemini_api_key: str = Field(default="", validation_alias="GEMINI_API_KEY")
     gemini_model_main: str = Field(default="gemini-3.8-flash", validation_alias="GEMINI_MODEL_MAIN")
     gemini_model_lite: str = Field(default="gemini-3.5-flash-lite", validation_alias="GEMINI_MODEL_LITE")
+    # Per-call HTTP timeout for live Gemini requests, in seconds.
+    gemini_timeout_seconds: float = Field(default=45.0, validation_alias="GEMINI_TIMEOUT_SECONDS")
     use_mock_ai: bool = Field(default=True, validation_alias="USE_MOCK_AI")
+    database_url: str = Field(
+        default="postgresql://wiseorganise:wiseorganise@db:5432/wiseorganise", validation_alias="DATABASE_URL"
+    )
+    public_base_url: str = Field(default="https://wiseorganise.reachit.space", validation_alias="PUBLIC_BASE_URL")
+    db_connect_retries: int = Field(default=30, validation_alias="DB_CONNECT_RETRIES")
+    db_connect_delay_seconds: float = Field(default=2.0, validation_alias="DB_CONNECT_DELAY_SECONDS")
 
     @property
     def gemini_enabled(self) -> bool:

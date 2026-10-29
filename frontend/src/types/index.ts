@@ -19,4 +19,18 @@ export interface GreenwashingRisk { vendorName: string; claim: string; areaIds?:
 export interface EcoSummary { kgCo2eMin: number; kgCo2eMax: number; optimizedKgCo2eMin: number; optimizedKgCo2eMax: number; savedPln: number; emissionFactorSources: string[]; }
 export interface EcoMotivator { squirrelsSaved: number; treesSaved: number; co2eSavedKg: number; message: string; metricName: string; }
 export interface ImpactSummary extends EcoSummary { provenance: string[]; ecoMotivator: EcoMotivator; }
+/** One arrangement: the level the organizer chose for a lifecycle area. Mirrors Ustalenie in backend/app/schemas/eguide.py. */
+export interface Ustalenie { areaId: AreaId; areaName: string; level: number; levelLabel: string; justification: string; costEffect: string; }
+/** Read-only projection served by GET /public/events/{slug}; mirrors PublicEventView in backend/app/schemas/public.py. */
+export interface PublicEventView {
+  title: string;
+  eventType: string;
+  eventDate: string;
+  location: string;
+  attendees: number;
+  ustalenia: Ustalenie[];
+  organizerChecklist: ChecklistItem[];
+  teamChecklists: TeamRole[];
+  impactSummary: ImpactSummary;
+}
 export interface PilotConfig { city: string; radiusKm: number; eventStart: string; prioritizeRail: boolean; prioritizeElectricBuses: boolean; }

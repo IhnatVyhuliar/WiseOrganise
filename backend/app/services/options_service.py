@@ -2,9 +2,10 @@
 from __future__ import annotations
 from typing import Any
 from ..mocks.knowledge_mocks import EVENT_AREAS
-from ..repositories.memory_repo import save_event
+from ..repositories.event_repo import save_event
 from ..schemas import AreaOptionsResponse, EventArea, EventResponse, NeededAreasUpdate, OptionSelectionPayload, OptionSelectionResponse
 from .checklist_builder import needed_area_ids
+from .eguide_service import invalidate_eguide
 from .event_service import public_event
 
 def needed_areas(event: dict[str, Any]) -> list[dict[str, Any]]:
@@ -26,8 +27,9 @@ def select_options(event: dict[str, Any], payload: OptionSelectionPayload) -> Op
     event["selected_options"] = selections
     event["options"] = {"areas": EVENT_AREAS}
     event["recommendations"] = {}
-    # A level tweak refines an existing guide; it does not invalidate it, so the
-    # organizer keeps the ticks already made. Only a change of needed areas does.
+    # The guide is built from these selections (ustalenia, min_level checklist
+    # items), and any read may have stored one already, so it must be rebuilt.
+    invalidate_eguide(event)
     save_event(event)
     saving = sum(1 for area in EVENT_AREAS if any(o["level"] == selections.get(area["id"]) and o["cost"] == "Obniża koszt" for o in area["levels"]))
     return OptionSelectionResponse(event_id=event["id"], selected_options=selections, cost_saving_choices=saving)
@@ -35,6 +37,6 @@ def select_options(event: dict[str, Any], payload: OptionSelectionPayload) -> Op
 def select_needed_areas(event: dict[str, Any], payload: NeededAreasUpdate) -> EventResponse:
     """Record which lifecycle areas the organizer actually needs."""
     event["needed_areas"] = [getattr(area, "value", area) for area in payload.needed_areas]
-    event["eguide"] = None
+    invalidate_eguide(event)
     save_event(event)
     return public_event(event)

@@ -1,13 +1,23 @@
-import type { AreaCriteria, AreaCriterion, AreaSuggestion, EventArea, PilotConfig, VendorCriterion, ChecklistItem, TeamRole, AreaId, AreaQuestions, ContractClause, GreenwashingRisk, EcoSummary, ImpactSummary } from '../types';
+import type { AreaCriteria, AreaCriterion, AreaSuggestion, EventArea, PilotConfig, PublicEventView, VendorCriterion, ChecklistItem, TeamRole, AreaId, AreaQuestions, ContractClause, GreenwashingRisk, EcoSummary, ImpactSummary } from '../types';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
+
+/** FastAPI reports failures as {"detail": "..."} in Polish; show that sentence, not the raw JSON. */
+async function errorMessage(response: Response): Promise<string> {
+  const body = await response.text();
+  try {
+    const parsed = JSON.parse(body);
+    if (typeof parsed?.detail === 'string') return parsed.detail;
+  } catch { /* not JSON: fall through to the raw body */ }
+  return body || `Request failed (${response.status})`;
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) },
   });
-  if (!response.ok) throw new Error((await response.text()) || `Request failed (${response.status})`);
+  if (!response.ok) throw new Error(await errorMessage(response));
   return response.status === 204 ? (undefined as T) : response.json();
 }
 
@@ -28,6 +38,9 @@ export interface ReferenceData {
 
 export interface EventRecord {
   id: string;
+  /** Short public address of the event; the share link is built from it by the backend. */
+  slug: string;
+  shareUrl: string;
   title: string;
   eventType: string;
   rawDescription: string;
@@ -69,6 +82,8 @@ export const api = {
   setChecklistDone: (id: string, payload: ChecklistDonePayload) => request<any>(`/events/${id}/eguide/checklist`, { method: 'PATCH', body: JSON.stringify(payload) }),
   impact: (id: string) => request<ImpactSummary>(`/events/${id}/impact`),
   suggestAreas: (id: string) => request<AreaSuggestionResponse>(`/events/${id}/suggest-areas`, { method: 'POST' }),
+  /** Read-only public view behind a share link. A 404 carries a Polish message the caller can show as it is. */
+  publicEvent: (slug: string) => request<PublicEventView>(`/public/events/${slug}`),
 };
 
 /** Area-scoped criterion; the backend spells the keys in Polish on /reference-data. */
@@ -115,7 +130,7 @@ export function normalizeReference(raw: any): ReferenceData {
     contract_clauses: raw.contract_clauses || raw.contractClauses || [],
     greenwashing_risks: (raw.greenwashing_risks || raw.greenwashingRisks || []).map(toRisk),
     eco_summary: ecoSummary ? { kgCo2eMin: ecoSummary.kgCo2eMin ?? ecoSummary.kg_co2e_min, kgCo2eMax: ecoSummary.kgCo2eMax ?? ecoSummary.kg_co2e_max, optimizedKgCo2eMin: ecoSummary.optimizedKgCo2eMin ?? ecoSummary.optimized_kg_co2e_min, optimizedKgCo2eMax: ecoSummary.optimizedKgCo2eMax ?? ecoSummary.optimized_kg_co2e_max, savedPln: ecoSummary.savedPln ?? ecoSummary.saved_pln, emissionFactorSources: ecoSummary.emissionFactorSources || ecoSummary.emission_factor_sources || [] } : null,
-    default_pilot: raw.default_pilot || raw.defaultPilot || { city: 'Uniwersytet Łódzki, Łódź', radiusKm: 20, eventStart: '09:30', prioritizeRail: true, prioritizeElectricBuses: true },
+    default_pilot: raw.default_pilot || raw.defaultPilot || { city: 'Miasto wydarzenia', radiusKm: 20, eventStart: '09:30', prioritizeRail: true, prioritizeElectricBuses: true },
     source_ids: raw.source_ids || raw.sourceIds || [],
   };
 }

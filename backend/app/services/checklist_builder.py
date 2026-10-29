@@ -7,7 +7,7 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any
 from ..mocks.knowledge_mocks import EVENT_AREAS, ORGANIZER_CHECKLIST, TEAM_ROLES
-from ..repositories.memory_repo import save_event
+from ..repositories.event_repo import save_event
 from ..schemas import ChecklistDoneUpdate
 
 ALL_AREA_IDS: list[str] = [area["id"] for area in EVENT_AREAS]
@@ -115,9 +115,10 @@ def build_team_checklists(event: dict[str, Any]) -> list[dict[str, Any]]:
 
 def set_done(event: dict[str, Any], update: ChecklistDoneUpdate) -> dict[str, Any]:
     """Persist a single checkbox toggle coming from the guide view."""
-    guide = event.get("eguide")
-    if guide is None:
-        raise LookupError("Generate the e-guide first")
+    from .eguide_service import get_eguide  # local: eguide_service imports this module
+
+    get_eguide(event)  # builds and stores the base guide when none exists yet
+    guide = event["eguide"]
     if update.role is None:
         for item in guide.get("organizer_checklist", []):
             if item.get("id") == update.item_id:
